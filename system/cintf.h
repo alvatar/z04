@@ -4,5 +4,6 @@
   #define EXTERN
 #endif
 
+#include "SDL2/SDL_syswm.h"
 
-EXTERN int bgfx_init(void* window, int width, int height);
+EXTERN int bgfx_init(SDL_SysWMinfo* wmi, int width, int height);
