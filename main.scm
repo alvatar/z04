@@ -1,1 +1,1 @@
-(load "main")
+(load "system/cintf_core")
