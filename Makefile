@@ -6,7 +6,7 @@ $(SUBDIRS):
 
 all:
 	@echo "Compiling FFI modules..."
-	@gsc -module-ref ffi/memory . ffi/memory
+	@gsc . ffi/memory
 
 clean:
 	@echo "Cleaning FFI modules..."

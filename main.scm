@@ -22,7 +22,7 @@
           (SDL_LogCritical (string-append "Error getting Window Manager info: " (SDL_GetError))))
 
 
-      (bgfx-init (*->void* wmi) window-width window-height)
+      (ffi/system/cintf#bgfx-init (*->void* wmi) window-width window-height)
 
       (SDL_DestroyWindow window)
       (SDL_Quit)
