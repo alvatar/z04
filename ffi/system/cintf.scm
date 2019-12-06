@@ -1,3 +1,11 @@
+;; (##supply-module ffi/system/cintf)
+
+(##namespace ("ffi/system/cintf#"))
+(##include "~~lib/_prim#.scm")                   ;; map fx+ to ##fx+, etc
+(##include "~~lib/_gambit#.scm")                 ;; for macro-check-procedure,
+(##include "cintf#.scm")
+
+
 (c-declare #<<c-declare-end
 
 #include "cintf.h"

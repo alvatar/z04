@@ -1,6 +1,7 @@
-(load "system/cintf_core")
-(load "memory")
-(load "../gambit-sdl2/sdl2")
+(load "ffi/system/cintf")
+;;(import (ffi/system/cintf))
+(import (ffi/memory))
+(import (github.com/alvatar/sdl2))
 
 
 (define (main)
