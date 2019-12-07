@@ -1,5 +1,4 @@
-(load "ffi/system/cintf")
-;;(import (ffi/system/cintf))
+(import (ffi/system/cintf))
 (import (ffi/memory))
 (import (github.com/alvatar/sdl2))
 
