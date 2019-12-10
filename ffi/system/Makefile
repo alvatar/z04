@@ -1,4 +1,4 @@
-BGFX_DIR = /Users/alvatar/Dropbox/projects/bgfx
+BGFX_DIR = /Users/alvatar/projects/external/bgfx
 
 GL_INCLUDE = /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework/Headers
 
@@ -7,6 +7,8 @@ BGFX_HEADERS =  -I$(BGFX_DIR)/bgfx/include \
 		-I$(BGFX_DIR)/bimg/include \
 		-I/usr/local/Cellar/sdl2/2.0.10/include \
 		-I$(GL_INCLUDE)
+
+CC_FLAGS = -std=c++17
 
 BGFX_LIB = -L../lib -lbgfx-shared-libDebug
 BGFX_LINK = libbgfx-shared-libDebug.dylib
