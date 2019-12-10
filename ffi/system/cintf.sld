@@ -2,6 +2,9 @@
 
   (import (gambit))
 
-  (export bgfx-init)
+  (export
+   graphics:init
+   graphics:frame
+   graphics:shutdown)
 
   (include "cintf.scm"))

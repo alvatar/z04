@@ -7,7 +7,7 @@
 #include "bgfx/bgfx.h"
 #include "bgfx/platform.h"
 
-#include "cintf.h"
+#include "cintf_bridge.h"
 
 
 //     SDL_Window *window;
@@ -34,7 +34,7 @@
 //         return 1;
 //     }
 
-int bgfx_init(SDL_SysWMinfo* wmi, int width, int height) {
+int system_window_init(SDL_SysWMinfo* wmi, int width, int height) {
     bgfx::PlatformData pd;
     pd.nwh =wmi->info.cocoa.window;
     bgfx::setPlatformData(pd);
@@ -54,19 +54,19 @@ int bgfx_init(SDL_SysWMinfo* wmi, int width, int height) {
     bgfx::touch(0);
 
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
-    bgfx::setViewRect(0, 0, 0, 640, 480);
+    bgfx::setViewRect(0, 0, 0, width, height);
 
     // Poll for events and wait till user closes window
-    bool quit = false;
-    SDL_Event currentEvent;
-    while(!quit) {
-        while(SDL_PollEvent(&currentEvent) != 0) {
-            if(currentEvent.type == SDL_QUIT) {
-                quit = true;
-            }
-        }
-        bgfx::frame();
-    }
+    // bool quit = false;
+    // SDL_Event currentEvent;
+    // while(!quit) {
+    //     while(SDL_PollEvent(&currentEvent) != 0) {
+    //         if(currentEvent.type == SDL_QUIT) {
+    //             quit = true;
+    //         }
+    //     }
+    //     bgfx::frame();
+    // }
 
     return 0;
 }

@@ -15,4 +15,4 @@ clean:
 .PHONY: all clean $(SUBDIRS)
 
 run:
-	@gsi -:search=./,search=../scheme-libs/ main
+	@gsi -:search=./,search=../ main

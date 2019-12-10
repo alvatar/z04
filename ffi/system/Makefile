@@ -22,7 +22,7 @@ cintf: cintf_bridge.cpp cintf.scm cintf.sld
 	@echo "Compiling System C interface..."
 	@clang $(CC_FLAGS) -c -o cintf_bridge.o -g cintf_bridge.cpp $(COMPILER_FLAGS) $(BGFX_HEADERS) #$(LINKER_FLAGS)
 	@gsc -module-ref ffi/system/cintf -link -flat -o cintf.o1.c cintf
-	@gsc -cc-options "-D___DYNAMIC" -obj cintf.c cintf.o1.c
+	@gsc -cc-options "$(BGFX_HEADERS) -D___DYNAMIC" -obj cintf.c cintf.o1.c
 	@clang -bundle cintf_bridge.o cintf.o cintf.o1.o $(LINKER_FLAGS) -o cintf.o1
 	@install_name_tool -change ../../osx64_clang/bin/$(BGFX_LINK) @loader_path/../lib/$(BGFX_LINK) cintf.o1
 	@rm -f cintf.c cintf.o cintf_bridge.o cintf.o1.c cintf.o1.o
