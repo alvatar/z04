@@ -1,9 +1,8 @@
 (import (scheme base))
 
 (import (github.com/alvatar/sdl2))
-
-(import (ffi/system/cintf))
-(import (ffi/memory))
+(import (github.com/alvatar/gles2))
+(import (github.com/alvatar/ffi-utils))
 
 (include "base-macros.scm")
 
@@ -26,18 +25,20 @@
           (SDL_LogCritical (string-append "Error getting Window Manager info: " (SDL_GetError))))
 
 
-      (graphics:init (*->void* wmi) window-width window-height)
+      ;; (let loop () (loop))
 
-      (let ((event* (alloc-SDL_Event)))
-        (let loop ()
-          (let poll-events ()
-            (if (zero? (SDL_PollEvent event*))
-                (loop)
-                (when (not (= (SDL_Event-type event*) SDL_QUIT))
-                  (graphics:frame #f)
-                  (poll-events))))))
+      ;; (graphics:init (*->void* wmi) window-width window-height)
 
-      (graphics:shutdown)
+      ;; (let ((event* (alloc-SDL_Event)))
+      ;;   (let loop ()
+      ;;     (let poll-events ()
+      ;;       (if (zero? (SDL_PollEvent event*))
+      ;;           (loop)
+      ;;           (when (not (= (SDL_Event-type event*) SDL_QUIT))
+      ;;             (graphics:frame #f)
+      ;;             (poll-events))))))
+
+      ;; (graphics:shutdown)
       (SDL_DestroyWindow window)
       (SDL_Quit)
       (SDL_Log "Exiting..."))))

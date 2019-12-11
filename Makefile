@@ -14,5 +14,7 @@ clean:
 
 .PHONY: all clean $(SUBDIRS)
 
+DEBUG_MODULES = -e "(##debug-modules?-set! #t)"
+
 run:
 	@gsi -:search=./,search=../ main
