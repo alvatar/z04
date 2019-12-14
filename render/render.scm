@@ -41,7 +41,7 @@ void main()
     ;; Create VBOs of dirty vertex objects
     (for-each
      (lambda (vo) (when (vertex-object-dirty vo)
-               (vertex-object-vbo-set! vo (f32vector->gl-buffer (vertex-object-vertices vo) GL_STATIC_DRAW))
+               (vertex-object-vbo-set! vo (f32vector->gl-buffer (vertex-object-vertices vo) GL_STREAM_DRAW))
                (vertex-object-dirty-set! vo #f)))
      vertex-objects)
 
