@@ -105,7 +105,7 @@
 
 (define (with-program program-id f)
   (glUseProgram program-id)
-  (f)
+  (f program-id)
   (glUseProgram 0))
 
 ;; Draws the given vbo with a particular program. The callback is
@@ -116,3 +116,24 @@
       (attribs-callback)
       (check-gl-error (glDrawArrays type 0 count))
       (glBindBuffer GL_ARRAY_BUFFER 0))))
+
+;; TODO
+(define (draw-sprite sprite)
+  (gl-draw-vbo (buffer-id (sprite-buffer sprite))
+               (table-ref *gl-programs* 'tex2d)
+               GL_TRIANGLES 6
+               (lambda ()
+                 ;; OpenGL 3.3+
+                 ;; (cond-expand (host (glBindSampler 0 (*->GLuint texture-sampler*)))
+                 ;;              (else #!void))
+                 (check-gl-error
+                  (glUniform1i (table-ref *gl-uniforms* 'texture) 0))
+                 (check-gl-error
+                  (glUniformMatrix4fv (table-ref *gl-uniforms* 'perspective) 1 GL_FALSE *gl-perspective-matrix*))
+                 (glEnableVertexAttribArray 0)
+                 (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+                 (glEnableVertexAttribArray 1)
+                 (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
+                                        (integer->void* (* 2 GLfloat-size)))
+                 (glActiveTexture GL_TEXTURE0)
+                 (glBindTexture GL_TEXTURE_2D (*->GLuint (sprite-texture-id sprite))))))

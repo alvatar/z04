@@ -28,15 +28,23 @@
       (SDL_GL_SetSwapInterval 0)
       (SDL_CreateRenderer window -1 (bitwise-ior SDL_RENDERER_ACCELERATED SDL_RENDERER_TARGETTEXTURE))
 
+      (renderer:init)
+
       (let ((event* (alloc-SDL_Event)))
         (let loop ()
           (let poll-events ()
             (if (zero? (SDL_PollEvent event*))
                 (loop)
                 (unless (= (SDL_Event-type event*) SDL_QUIT)
-                  (render)
+
+                  (renderer:render)
+
+                  ;;(render-text 1 1 "Hello world")
+
                   (SDL_GL_SwapWindow window)
                   (poll-events))))))
+
+      (renderer:shutdown)
 
       (SDL_DestroyWindow window)
       (SDL_Quit)

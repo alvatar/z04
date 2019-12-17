@@ -5,6 +5,8 @@
   (import (github.com/alvatar/gles2))
   (import (github.com/alvatar/ffi-utils))
 
-  (export render)
+  (export renderer:init
+          renderer:shutdown
+          renderer:render)
 
   (include "render.scm"))
