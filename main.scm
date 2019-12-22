@@ -39,8 +39,6 @@
 
                   (renderer:render)
 
-                  ;;(render-text 1 1 "Hello world")
-
                   (SDL_GL_SwapWindow window)
                   (poll-events))))))
 
