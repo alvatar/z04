@@ -54,14 +54,21 @@
     ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
     ;; Generate and bind texture
     (glGenTextures 1 texture-id*)
-    (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-    ;; Check errors
-    (check-gl-error
-     (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
-                   texture-width texture-height
-                   0 GL_BGRA_EXT GL_UNSIGNED_BYTE
-                   (SDL_Surface-pixels texture-surf*)))
-    ;; Unbind and free the surface
-    (glBindTexture GL_TEXTURE_2D 0)
-    (SDL_FreeSurface texture-surf*)
-    (values texture-id* texture-width texture-height)))
+    (let ((texture-id (*->GLuint texture-id*)))
+      (glBindTexture GL_TEXTURE_2D texture-id)
+      ;; FILTER: Necessary for NPOT textures in GLES2
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+      ;; WRAP: Necessary for NPOT textures in GLES2
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+      ;; Check errors
+      (check-gl-error
+       (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
+                     texture-width texture-height
+                     0 GL_BGRA_EXT GL_UNSIGNED_BYTE
+                     (SDL_Surface-pixels texture-surf*)))
+      ;; Unbind and free the surface
+      ;;(glBindTexture GL_TEXTURE_2D 0)
+      (SDL_FreeSurface texture-surf*)
+      (values texture-id texture-width texture-height))))

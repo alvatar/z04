@@ -9,8 +9,9 @@
 (define (main)
   (when (< (SDL_Init SDL_INIT_VIDEO) 0) (SDL_LogCritical (string-append "Error initializing SDL " (SDL_GetError))))
   (SDL_Log "Initializing...\n")
-  (let* ((window-width 640)
-         (window-height 480)
+  (let* ((mode* (alloc-SDL_DisplayMode))
+         (window-width 800)
+         (window-height 600)
          (window (SDL_CreateWindow "Ultra Awesome CAD"
                                    SDL_WINDOWPOS_UNDEFINED
                                    SDL_WINDOWPOS_UNDEFINED
@@ -28,19 +29,19 @@
       (SDL_GL_SetSwapInterval 0)
       (SDL_CreateRenderer window -1 (bitwise-ior SDL_RENDERER_ACCELERATED SDL_RENDERER_TARGETTEXTURE))
 
-      (renderer:init)
+      (renderer:init window-width window-height)
 
-      (let ((event* (alloc-SDL_Event)))
-        (let loop ()
-          (let poll-events ()
-            (if (zero? (SDL_PollEvent event*))
-                (loop)
-                (unless (= (SDL_Event-type event*) SDL_QUIT)
-
-                  (renderer:render)
-
-                  (SDL_GL_SwapWindow window)
-                  (poll-events))))))
+      (let/cc exit
+              (let ((event* (alloc-SDL_Event)))
+                (let loop ()
+                  (let poll-events ()
+                    (if (= 1 (SDL_PollEvent event*))
+                        (when (= (SDL_Event-type event*) SDL_QUIT)
+                          ;; TODO!
+                          (exit)))
+                    (renderer:render)
+                    (SDL_GL_SwapWindow window)
+                    (poll-events)))))
 
       (renderer:shutdown)
 

@@ -24,6 +24,8 @@
      result))
 
 ;; UUID v4 generator
+;; Returns an RFC 4122, section 4.4 compliant uuid based on either the default random
+;; function or one supplied with the function
 (define (uuid-v4 #!optional [randfn random-integer])
   (define hex-vals (string->list "0123456789abcdef"))
   (define uuid-v4-pattern "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx")

@@ -17,20 +17,55 @@
      (position: 0 0))))
 
 ;; TODO: Transform scene-graph -> scene-tree
-
 (define example-scene-tree #f)
 
-(define (renderer:init)
-  (programs:init)
-  (fonts:init)
+;; Handle window resizing and orientation
+(define (renderer:resize screen-width screen-height)
+  (set! *screen-width* screen-width)
+  (set! *screen-height* screen-height)
+  (set! *perspective-matrix*
+        (matrix* (make-translation-matrix -1.0 1.0 0.0)
+                 (matrix* (make-scaling-matrix (/ 2.0 screen-width)
+                                               (/ -2.0 screen-height)
+                                               1.0)
+                          (make-identity-matrix))))
+  (set! *gl-perspective-matrix* (matrix->GLfloat*
+                                 (matrix.map exact->inexact
+                                             *perspective-matrix*))))
 
+(define (renderer:init width height)
+  (renderer:resize width height)
+  (fonts:init)
+  (programs:init)
+
+  (SDL_GL_SetAttribute SDL_GL_ALPHA_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_RED_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
+  (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
+  (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
+
+  ;; TMP, for testing
+  (set! *vertex-objects*
+        (list
+         (make-vertex-object
+          (f32vector
+           0. 0.
+           (exact->inexact (/ *screen-width* 2)) (exact->inexact (/ *screen-height* 2)))
+          #t #f)
+         (make-vertex-object
+          (f32vector
+           100. 100.
+           300. 0.)
+                             #t #f)))
   (set! example-scene-tree
         (list
          text:
-         (make-text "Hello world!"
+         (make-text "Hello world!!"
                     (make-box2d (make-vector2 -1.0 1.0) (make-vector2 1.0 -1.0))
                     '("assailand" 14)
-                    (make-color 250 0 0 255)))))
+                    (make-color 255 255 255 255)))))
 
 (define (renderer:shutdown)
   (fonts:shutdown)
@@ -39,43 +74,33 @@
 (define (renderer:render)
   (glClearColor 0.0 0.0 0.0 1.0)
   (glClear GL_COLOR_BUFFER_BIT)
-
   ;; Create VBOs of dirty vertex objects
   (for-each
-   (lambda (vo) (when (vertex-object-dirty vo)
-             (vertex-object-vbo-set! vo (f32vector->gl-buffer (vertex-object-vertices vo) GL_STREAM_DRAW))
-             (vertex-object-dirty-set! vo #f)))
+   (lambda (vo) (when (vertex-object-dirty? vo) (vertex-object.refresh! vo)))
    *vertex-objects*)
 
   ;; Render lines
   (with-gl-program
-   (table-ref *programs* 'lines)
+   'lines
    (lambda (program-id)
      (for-each
       (lambda (vo) (gl-draw-with-vbo (vertex-object-vbo vo)
                                 GL_LINE_STRIP
                                 (f32vector-length (vertex-object-vertices vo))
                                 (lambda ()
+                                  (check-gl-error
+                                   (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE *gl-perspective-matrix*))
                                   (let ((pos (glGetAttribLocation program-id "position")))
                                     (glEnableVertexAttribArray pos)
-                                    (glVertexAttribPointer pos 2 GL_FLOAT GL_FALSE 0 (integer->void* 0))))))
+                                    (glVertexAttribPointer pos 2 GL_FLOAT GL_FALSE 0 #f)))))
       *vertex-objects*)))
 
-  ;; TEST XXX
+  ;; Render texts
   (with-gl-program
-   (table-ref *programs* 'texture-2d)
+   'texture-2d
    (lambda (program-id)
      (with-text-render-state
-      (lambda () 'a)
-      ;;(lambda () (text.render (cadr example-scene-tree)))
-      )))
+      (lambda () (text.render (cadr example-scene-tree) program-id)))))
 
-  ;; TODO: iterate  and render
-
-  ;; Render texts
-  ;; TODO
-  ;; (with-program
-  ;;  (table-ref *programs* 'texture-2d)
-  ;;  (with-text-render-state
-  ;;   ))
+  ;; TODO: iterate graph and render
   )

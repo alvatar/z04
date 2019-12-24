@@ -6,7 +6,6 @@
   name size data)
 
 ;; Key: (name size)
-(define *fonts* (make-table))
 
 (define (fonts:install name size file)
   (let ((key (list name size)))
@@ -44,48 +43,76 @@
 (define-type text
   constructor: make-text/internal
   content box2d font color
-  dirty (texture unprintable:) (vbo unprintable:))
+  dirty? texture (vertex-object unprintable:))
 
 (define (text.update! text #!key :content :box2d :font :color)
   text)
 
+(define (box2d->f32vector-path x1 y1 w h)
+  (let ((qx1 x1)
+        (qy1 y1))
+    (let ((qx2 (+ qx1 w))
+          (qy2 (+ qy1 h)))
+      (f32vector qx1 qy1 0.0 0.0
+                 qx1 qy2 0.0 1.0
+                 qx2 qy1 1.0 0.0
+                 qx2 qy1 1.0 0.0
+                 qx1 qy2 0.0 1.0
+                 qx2 qy2 1.0 1.0))))
+
 (define (text.refresh! text)
-  ;; TODO!
+  ;; TODO: remove old texture
+  (when (text-dirty? text)
+    (let ((font (table-ref *fonts* (text-font text)))
+          (key (uuid-v4)))
+      (receive (texture-id w h)
+          (sdl-surface->gl-texture
+           (TTF_RenderUTF8_Blended (font-data font) (text-content text) (color->SDL_Color (text-color text))))
+        (text-dirty?-set! text #f)
+        (text-texture-set! text texture-id)
+        ;; TODO: just update vertex object if necessary, use proper values
+        (text-vertex-object-set! text (make-vertex-object
+                                       ;; TODO!
+                                       (box2d->f32vector-path 100.0 100.0 w h) #t #f))
+        text)))
   text)
 
-;;! text: string box2d font color
+;;! text: string box2d font-key color
 (define (make-text content box2d font-key color)
-  (let ((font (table-ref *fonts* font-key)))
-    (receive (texture-id* w h)
-        (sdl-surface->gl-texture (TTF_RenderUTF8_Blended (font-data font) content (color->SDL_Color color)))
-      (let* ((key (uuid-v4))
-             (text (make-text/internal
-                    content
-                    box2d
-                    font
-                    color
-                    #t
-                    (make-texture/internal texture-id* key w h)
-                    #f)))
-        (text.refresh! text)
-        text))))
+  (let ((text (make-text/internal
+               content
+               box2d
+               font-key
+               color
+               #t
+               #f
+               #f)))
+    (text.refresh! text)
+    text))
 
 (define (with-text-render-state f)
   (glEnable GL_TEXTURE_2D)
   (glEnable GL_BLEND)
   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
-  ;; FILTER: Necessary for NPOT textures in GLES2
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-  ;; WRAP: Necessary for NPOT textures in GLES2
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
   (f)
   (glDisable GL_TEXTURE_2D)
-  (glDisable GL_BLEND))
-
-(define (text.render text)
-  'TODO
-  ;; HERE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ;; Put below functionality here
+  (glDisable GL_BLEND)
   )
+
+(define (text.render text program-id)
+  (let ((vo (text-vertex-object text)))
+    (gl-draw-with-vbo
+     (vertex-object-vbo vo)
+     GL_TRIANGLES
+     6
+     (lambda ()
+       (check-gl-error
+        (glUniform1i (glGetUniformLocation program-id "colorTexture") 0))
+       (check-gl-error
+        (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE *gl-perspective-matrix*))
+       (glEnableVertexAttribArray 0)
+       (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+       (glEnableVertexAttribArray 1)
+       (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
+       (glActiveTexture GL_TEXTURE0)
+       (glBindTexture GL_TEXTURE_2D (text-texture text))))))

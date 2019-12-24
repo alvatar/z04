@@ -4,12 +4,17 @@
 
 (define-type vertex-object
   vertices
-  dirty (vbo unprintable:))
-(define *vertex-objects*
-  (list
-   (make-vertex-object (f32vector 0.0 0.5 0.5 -0.5 -0.5 -0.5) #t #f)
-   (make-vertex-object (f32vector 1.0 1.0 1.5 -1.5 -1.5 -1.5) #t #f)
-   (make-vertex-object (f32vector 2.0 -0.5 1.5 -1.5 -0.5 1.5) #t #f)))
+  dirty? (vbo-data unprintable:))
+
+;;! refresh the internal data if the dirty? flag is set
+(define (vertex-object.refresh! vo)
+  (when (vertex-object-dirty? vo)
+    (vertex-object-vbo-data-set! vo (f32vector->gl-buffer (vertex-object-vertices vo) GL_STREAM_DRAW))
+    (vertex-object-dirty?-set! vo #f)))
+
+(define (vertex-object-vbo vo)
+  (vertex-object.refresh! vo)
+  (vertex-object-vbo-data vo))
 
 ;;! Creates a new OpenGL VBO from a given f32vector.
 (define (f32vector->gl-buffer vertex-data-vector buffer-type)

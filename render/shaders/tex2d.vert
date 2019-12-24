@@ -1,14 +1,8 @@
-#ifdef GL_ES
-precision highp float;
-precision mediump int;
-#endif
-
 attribute vec2 position;
 attribute vec2 texCoord;
+uniform mat4 perspectiveMatrix;
 
 varying vec2 colorCoord;
-
-uniform mat4 perspectiveMatrix;
 
 void main()
 {
