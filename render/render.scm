@@ -2,22 +2,7 @@
 ;; Renderer
 ;;
 
-(define example-scene-graph
-  '(root:graph
-    (group:
-     (info: (name: "my group"))
-     (elements:
-      (polyline: (1 1) (0 0) (2 2) (3 3))
-      (polyline: (3 2) (1 4) (5 2) (2 3))
-      (polyline: (2 1) (4 4) (2 4) (0 3))))
-    (text:
-     (font: "assailand")
-     (size: 14)
-     (content: "Hello world!")
-     (position: 0 0))))
-
-;; TODO: Transform scene-graph -> scene-tree
-(define example-scene-tree #f)
+(define *scene-graph*)
 
 ;; Handle window resizing and orientation
 (define (renderer:resize screen-width screen-height)
@@ -44,28 +29,7 @@
   (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
   (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
   (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
-  (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
-
-  ;; TMP, for testing
-  (set! *vertex-objects*
-        (list
-         (make-vertex-object
-          (f32vector
-           0. 0.
-           (exact->inexact (/ *screen-width* 2)) (exact->inexact (/ *screen-height* 2)))
-          #t #f)
-         (make-vertex-object
-          (f32vector
-           100. 100.
-           300. 0.)
-                             #t #f)))
-  (set! example-scene-tree
-        (list
-         text:
-         (make-text "Hello world!!"
-                    (make-box2d (make-vector2 -1.0 1.0) (make-vector2 1.0 -1.0))
-                    '("assailand" 14)
-                    (make-color 255 255 255 255)))))
+  (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1))
 
 (define (renderer:shutdown)
   (fonts:shutdown)
@@ -100,7 +64,54 @@
    'texture-2d
    (lambda (program-id)
      (with-text-render-state
-      (lambda () (text.render (cadr example-scene-tree) program-id)))))
+      (lambda ()
+        (for-each
+         (lambda (e) (text.render (cadr e) program-id))
+         *scene-tree*)))))
 
   ;; TODO: iterate graph and render
   )
+
+
+;; --------------------------
+;; Fake data for testing
+(define (renderer:set-test-data!)
+  (fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
+  (fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
+
+  (set! *vertex-objects*
+        (list
+         (make-vertex-object
+          (f32vector
+           0. 0.
+           (exact->inexact (/ *screen-width* 2)) (exact->inexact (/ *screen-height* 2)))
+          #t #f)
+         (make-vertex-object
+          (f32vector
+           100. 100.
+           300. 0.)
+          #t #f)))
+  (set! *scene-graph*
+        '(root:graph
+          (group:
+           (info: (name: "my group"))
+           (elements:
+            (polyline: (1 1) (0 0) (2 2) (3 3))
+            (polyline: (3 2) (1 4) (5 2) (2 3))
+            (polyline: (2 1) (4 4) (2 4) (0 3))))
+          (text:
+           (font: "assailand")
+           (size: 14)
+           (content: "Hello world!")
+           (position: 0 0))))
+  (set! *scene-tree*
+        `((text:
+           ,(make-text "Hello world!!"
+                       (make-box2d (make-vector2 100.0 100.0) (make-vector2 40.0 34.0))
+                       '("assailand" 34)
+                       (make-color 255 255 255 255)))
+          (text:
+           ,(make-text "Yes Yes"
+                       (make-box2d (make-vector2 300.0 100.0) (make-vector2 20.0 34.0))
+                       '("assailand" 34)
+                       (make-color 255 255 255 255))))))

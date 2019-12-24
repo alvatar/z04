@@ -27,8 +27,7 @@
    *fonts*))
 
 (define (fonts:init)
-  (TTF_Init)
-  (fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf"))
+  (TTF_Init))
 
 (define (fonts:shutdown)
   (table-for-each
@@ -48,32 +47,33 @@
 (define (text.update! text #!key :content :box2d :font :color)
   text)
 
-(define (box2d->f32vector-path x1 y1 w h)
-  (let ((qx1 x1)
-        (qy1 y1))
-    (let ((qx2 (+ qx1 w))
-          (qy2 (+ qy1 h)))
-      (f32vector qx1 qy1 0.0 0.0
-                 qx1 qy2 0.0 1.0
-                 qx2 qy1 1.0 0.0
-                 qx2 qy1 1.0 0.0
-                 qx1 qy2 0.0 1.0
-                 qx2 qy2 1.0 1.0))))
+(define (texture-vertices-rect top-left bottom-right)
+  (let ((qx1 (vector2-x top-left))
+        (qy1 (vector2-y top-left))
+        (qx2 (vector2-x bottom-right))
+        (qy2 (vector2-y bottom-right)))
+    (f32vector qx1 qy1 0.0 0.0
+               qx1 qy2 0.0 1.0
+               qx2 qy1 1.0 0.0
+               qx2 qy1 1.0 0.0
+               qx1 qy2 0.0 1.0
+               qx2 qy2 1.0 1.0)))
 
 (define (text.refresh! text)
   ;; TODO: remove old texture
   (when (text-dirty? text)
     (let ((font (table-ref *fonts* (text-font text)))
-          (key (uuid-v4)))
+          (key (uuid-v4))
+          (box2d (text-box2d text)))
       (receive (texture-id w h)
           (sdl-surface->gl-texture
            (TTF_RenderUTF8_Blended (font-data font) (text-content text) (color->SDL_Color (text-color text))))
         (text-dirty?-set! text #f)
         (text-texture-set! text texture-id)
-        ;; TODO: just update vertex object if necessary, use proper values
         (text-vertex-object-set! text (make-vertex-object
-                                       ;; TODO!
-                                       (box2d->f32vector-path 100.0 100.0 w h) #t #f))
+                                       (texture-vertices-rect (box2d-top-left box2d)
+                                                              (box2d-bottom-right box2d))
+                                       #t #f))
         text)))
   text)
 

@@ -12,7 +12,8 @@
 
   (export renderer:init
           renderer:shutdown
-          renderer:render)
+          renderer:render
+          renderer:set-test-data!)
 
   (begin
     (include "globals.scm")

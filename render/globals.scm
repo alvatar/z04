@@ -10,3 +10,9 @@
 ;; A program is just a GL id
 (define *programs* (make-table))
 
+;; TODO: Transform scene-graph -> scene-tree
+
+(define *scene-graph* #f)
+
+(define *scene-tree* #f)
+

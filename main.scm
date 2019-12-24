@@ -6,6 +6,7 @@
 (import (base))
 (import (render))
 
+
 (define (main)
   (when (< (SDL_Init SDL_INIT_VIDEO) 0) (SDL_LogCritical (string-append "Error initializing SDL " (SDL_GetError))))
   (SDL_Log "Initializing...\n")
@@ -31,17 +32,19 @@
 
       (renderer:init window-width window-height)
 
+      ;;--------
+      (renderer:set-test-data!)
+      ;;--------
+
       (let/cc exit
               (let ((event* (alloc-SDL_Event)))
-                (let loop ()
-                  (let poll-events ()
-                    (if (= 1 (SDL_PollEvent event*))
-                        (when (= (SDL_Event-type event*) SDL_QUIT)
-                          ;; TODO!
-                          (exit)))
-                    (renderer:render)
-                    (SDL_GL_SwapWindow window)
-                    (poll-events)))))
+                (let poll-events ()
+                  (if (= 1 (SDL_PollEvent event*))
+                      (when (= (SDL_Event-type event*) SDL_QUIT)
+                        (exit)))
+                  (renderer:render)
+                  (SDL_GL_SwapWindow window)
+                  (poll-events))))
 
       (renderer:shutdown)
 
