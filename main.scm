@@ -9,7 +9,22 @@
 
 (define (main)
   (when (< (SDL_Init SDL_INIT_VIDEO) 0) (SDL_LogCritical (string-append "Error initializing SDL " (SDL_GetError))))
+
   (SDL_Log "Initializing...\n")
+  (SDL_GL_SetAttribute SDL_GL_MULTISAMPLEBUFFERS 1)
+  (SDL_GL_SetAttribute SDL_GL_MULTISAMPLESAMPLES 16)
+  (SDL_GL_SetAttribute SDL_GL_ALPHA_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_RED_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
+  (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
+  (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
+  (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
+  (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
+  (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)
+  (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
+  (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 24)
+
   (let* ((mode* (alloc-SDL_DisplayMode))
          (window-width 800)
          (window-height 600)
@@ -20,12 +35,6 @@
                                    window-height
                                    SDL_WINDOW_SHOWN)))
     (unless window (SDL_LogCritical (string-append "Error creating window: " (SDL_GetError))))
-
-    (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
-    (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)
-    (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-    (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 24)
-
     (let ((glc (SDL_GL_CreateContext window)))
       (SDL_GL_SetSwapInterval 0)
       (SDL_CreateRenderer window -1 (bitwise-ior SDL_RENDERER_ACCELERATED SDL_RENDERER_TARGETTEXTURE))
@@ -35,13 +44,24 @@
       ;;--------
       (renderer:set-test-data!)
       ;;--------
+      ;; (SDL_SetRelativeMouseMode SDL_TRUE)
 
       (let/cc exit
-              (let ((event* (alloc-SDL_Event)))
+              (let ((event* (*->void* (alloc-SDL_Event)))
+                    (mouse-down #f))
                 (let poll-events ()
                   (if (= 1 (SDL_PollEvent event*))
-                      (when (= (SDL_Event-type event*) SDL_QUIT)
-                        (exit)))
+                      (cond ((= (SDL_Event-type event*) SDL_QUIT)
+                             (exit))
+                            ((= (SDL_Event-type event*) SDL_MOUSEBUTTONDOWN)
+                             (set! mouse-down #t))
+                            ((= (SDL_Event-type event*) SDL_MOUSEBUTTONUP)
+                             (set! mouse-down #f))
+                            ((= (SDL_Event-type event*) SDL_MOUSEMOTION)
+                             (when mouse-down
+                               (let ((x (SDL_MouseMotionEvent-xrel event*))
+                                     (y (SDL_MouseMotionEvent-yrel event*)))
+                                 (renderer:translate-view! x y))))))
                   (renderer:render)
                   (SDL_GL_SwapWindow window)
                   (poll-events))))

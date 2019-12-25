@@ -60,7 +60,6 @@
                qx2 qy2 1.0 1.0)))
 
 (define (text.refresh! text)
-  ;; TODO: remove old texture
   (when (text-dirty? text)
     (let ((font (table-ref *fonts* (text-font text)))
           (key (uuid-v4))
@@ -69,10 +68,15 @@
           (sdl-surface->gl-texture
            (TTF_RenderUTF8_Blended (font-data font) (text-content text) (color->SDL_Color (text-color text))))
         (text-dirty?-set! text #f)
+        (when-let [old-texture (text-texture text)]
+                  (glDeleteTextures 1 old-texture))
         (text-texture-set! text texture-id)
         (text-vertex-object-set! text (make-vertex-object
                                        (texture-vertices-rect (box2d-top-left box2d)
-                                                              (box2d-bottom-right box2d))
+                                                              (vector2+ (box2d-top-left box2d)
+                                                                        ;; TODO: Multiplied by 0.5 for HDPI. Revisit.
+                                                                        (vector2*scalar (make-vector2 w h)
+                                                                                        0.5)))
                                        #t #f))
         text)))
   text)

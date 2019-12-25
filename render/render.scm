@@ -2,34 +2,30 @@
 ;; Renderer
 ;;
 
-(define *scene-graph*)
+(define (perspective-matrix-update! f)
+  (set! *perspective-matrix* (f *perspective-matrix*))
+  (set! *gl-perspective-matrix* (matrix->GLfloat* (matrix.map exact->inexact *perspective-matrix*))))
 
 ;; Handle window resizing and orientation
 (define (renderer:resize screen-width screen-height)
   (set! *screen-width* screen-width)
   (set! *screen-height* screen-height)
-  (set! *perspective-matrix*
-        (matrix* (make-translation-matrix -1.0 1.0 0.0)
+  (perspective-matrix-update!
+   (lambda _ (matrix* (make-translation-matrix -1.0 1.0 0.0)
                  (matrix* (make-scaling-matrix (/ 2.0 screen-width)
                                                (/ -2.0 screen-height)
                                                1.0)
-                          (make-identity-matrix))))
-  (set! *gl-perspective-matrix* (matrix->GLfloat*
-                                 (matrix.map exact->inexact
-                                             *perspective-matrix*))))
+                          (make-identity-matrix))))))
+
+(define (renderer:translate-view! x y)
+  (perspective-matrix-update! (lambda (m) (matrix* m (make-translation-matrix x y 0.0)))))
 
 (define (renderer:init width height)
+  (glEnable GL_MULTISAMPLE_EXT)
+
   (renderer:resize width height)
   (fonts:init)
-  (programs:init)
-
-  (SDL_GL_SetAttribute SDL_GL_ALPHA_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_RED_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-  (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
-  (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1))
+  (programs:init))
 
 (define (renderer:shutdown)
   (fonts:shutdown)

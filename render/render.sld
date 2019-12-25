@@ -13,7 +13,8 @@
   (export renderer:init
           renderer:shutdown
           renderer:render
-          renderer:set-test-data!)
+          renderer:set-test-data!
+          renderer:translate-view!)
 
   (begin
     (include "globals.scm")
