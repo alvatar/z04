@@ -8,7 +8,7 @@
    (SDL_Color-b sdl-color)
    (SDL_Color-a sdl-color)))
 
-(define (color->SDL_Color color)
+(define-memoized (color->SDL_Color color)
   (let ((sdl-color* (alloc-SDL_Color)))
     (SDL_Color-r-set! sdl-color* (color-r color))
     (SDL_Color-g-set! sdl-color* (color-g color))

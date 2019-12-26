@@ -1,18 +1,23 @@
-(define *perspective-matrix*)
-(define *gl-perspective-matrix*)
+;; Space geometry and projection
 (define *screen-width*)
 (define *screen-height*)
+(define *base-matrix*)
+(define *gl-base-matrix*)
 
-(define *fonts* (make-table))
+(define *translation-vector2* (make-vector2 0.0 0.0))
+(define *scaling-factor* 1.0)
+(define *perspective-matrix*)
+(define *gl-perspective-matrix*)
 
+
+;; Scene
+(define *scene-graph*)
+(define *scene-tree*)
 (define *vertex-objects*)
 
-;; A program is just a GL id
-(define *programs* (make-table))
+;; Resources
+(define *fonts* (make-table)) ; (name size) -> font
+(define *programs* (make-table)) ; name -> GLuint id
 
-;; TODO: Transform scene-graph -> scene-tree
-
-(define *scene-graph*)
-
-(define *scene-tree*)
-
+;; Misc
+(define *debug-texts*)

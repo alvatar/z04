@@ -2,7 +2,10 @@
 
   (import (gambit))
   (import (_match))
+  (import (srfi 28))
+
   (import (github.com/alvatar/base))
+  (import (github.com/alvatar/base memoization))
   (import (github.com/alvatar/gles2))
   (import (github.com/alvatar/ffi-utils))
   (import (github.com/alvatar/sdl2))
@@ -14,7 +17,8 @@
           renderer:shutdown
           renderer:render
           renderer:set-test-data!
-          renderer:translate-view!)
+          renderer:translate-view!
+          renderer:scale-view!)
 
   (begin
     (include "globals.scm")

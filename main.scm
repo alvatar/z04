@@ -26,8 +26,9 @@
   (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 24)
 
   (let* ((mode* (alloc-SDL_DisplayMode))
-         (window-width 800)
-         (window-height 600)
+         (_ (SDL_GetDesktopDisplayMode 0 mode*))
+         (window-width (SDL_DisplayMode-w mode*))
+         (window-height (- (SDL_DisplayMode-h mode*) 50))
          (window (SDL_CreateWindow "Ultra Awesome CAD"
                                    SDL_WINDOWPOS_UNDEFINED
                                    SDL_WINDOWPOS_UNDEFINED
@@ -50,7 +51,7 @@
               (let ((event* (*->void* (alloc-SDL_Event)))
                     (mouse-down #f))
                 (let poll-events ()
-                  (if (= 1 (SDL_PollEvent event*))
+                  (if (= 1 (SDL_WaitEvent event*))
                       (cond ((= (SDL_Event-type event*) SDL_QUIT)
                              (exit))
                             ((= (SDL_Event-type event*) SDL_MOUSEBUTTONDOWN)
@@ -61,7 +62,10 @@
                              (when mouse-down
                                (let ((x (SDL_MouseMotionEvent-xrel event*))
                                      (y (SDL_MouseMotionEvent-yrel event*)))
-                                 (renderer:translate-view! x y))))))
+                                 (renderer:translate-view! x y))))
+                            ((= (SDL_Event-type event*) SDL_MOUSEWHEEL)
+                             (let ((s (SDL_MouseWheelEvent-y event*)))
+                               (renderer:scale-view! s)))))
                   (renderer:render)
                   (SDL_GL_SwapWindow window)
                   (poll-events))))

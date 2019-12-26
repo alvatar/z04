@@ -83,40 +83,37 @@
 
 ;;! text: string box2d font-key color
 (define (make-text content box2d font-key color)
-  (let ((text (make-text/internal
-               content
-               box2d
-               font-key
-               color
-               #t
-               #f
-               #f)))
+  (let ((text (make-text/internal content box2d font-key color #t #f #f)))
     (text.refresh! text)
     text))
 
-(define (with-text-render-state f)
+(define (with-text-render-state/aux program-id f matrix)
   (glEnable GL_TEXTURE_2D)
   (glEnable GL_BLEND)
   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
+  (check-gl-error
+   (glUniform1i (glGetUniformLocation program-id "colorTexture") 0))
+  (check-gl-error
+   (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE matrix))
   (f)
   (glDisable GL_TEXTURE_2D)
-  (glDisable GL_BLEND)
-  )
+  (glDisable GL_BLEND))
 
-(define (text.render text program-id)
+(define (with-text-render-state program-id f)
+  (with-text-render-state/aux program-id f *gl-perspective-matrix*))
+
+(define (with-overlay-text-render-state program-id f)
+  (with-text-render-state/aux program-id f *gl-base-matrix*))
+
+(define (text.render text)
   (let ((vo (text-vertex-object text)))
-    (gl-draw-with-vbo
-     (vertex-object-vbo vo)
-     GL_TRIANGLES
-     6
-     (lambda ()
-       (check-gl-error
-        (glUniform1i (glGetUniformLocation program-id "colorTexture") 0))
-       (check-gl-error
-        (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE *gl-perspective-matrix*))
-       (glEnableVertexAttribArray 0)
-       (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
-       (glEnableVertexAttribArray 1)
-       (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
-       (glActiveTexture GL_TEXTURE0)
-       (glBindTexture GL_TEXTURE_2D (text-texture text))))))
+    (gl-draw-with-vbo (vertex-object-vbo vo)
+                      GL_TRIANGLES
+                      6
+                      (lambda ()
+                        (glEnableVertexAttribArray 0)
+                        (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+                        (glEnableVertexAttribArray 1)
+                        (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
+                        (glActiveTexture GL_TEXTURE0)
+                        (glBindTexture GL_TEXTURE_2D (text-texture text))))))

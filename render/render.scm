@@ -1,31 +1,31 @@
-;;
-;; Renderer
-;;
-
-(define (perspective-matrix-update! f)
-  (set! *perspective-matrix* (f *perspective-matrix*))
+(define (perspective-matrix-update!)
+  (set! *perspective-matrix* (matrix* (matrix* *base-matrix*
+                                               (make-scaling-matrix *scaling-factor* *scaling-factor* 1.0))
+                                      (make-translation-matrix (vector2-x *translation-vector2*) (vector2-y *translation-vector2*) 0.0)))
   (set! *gl-perspective-matrix* (matrix->GLfloat* (matrix.map exact->inexact *perspective-matrix*))))
 
-;; Handle window resizing and orientation
-(define (renderer:resize screen-width screen-height)
+(define (renderer:update-view! screen-width screen-height)
   (set! *screen-width* screen-width)
   (set! *screen-height* screen-height)
-  (perspective-matrix-update!
-   (lambda _ (matrix* (make-translation-matrix -1.0 1.0 0.0)
-                 (matrix* (make-scaling-matrix (/ 2.0 screen-width)
-                                               (/ -2.0 screen-height)
-                                               1.0)
-                          (make-identity-matrix))))))
-
-(define (renderer:translate-view! x y)
-  (perspective-matrix-update! (lambda (m) (matrix* m (make-translation-matrix x y 0.0)))))
+  (set! *base-matrix* (matrix* (make-translation-matrix -1.0 1.0 0.0)
+                               (make-scaling-matrix (/ 2.0 screen-width) (/ -2.0 screen-height) 1.0)))
+  (set! *gl-base-matrix* (matrix->GLfloat* (matrix.map exact->inexact *base-matrix*)))
+  (perspective-matrix-update!))
 
 (define (renderer:init width height)
   (glEnable GL_MULTISAMPLE_EXT)
-
-  (renderer:resize width height)
+  (renderer:update-view! width height)
   (fonts:init)
   (programs:init))
+
+(define (renderer:translate-view! x y)
+  (update! *translation-vector2* (lambda (v) (vector2+ v (make-vector2 (/ x *scaling-factor*)
+                                                                  (/ y *scaling-factor*)))))
+  (perspective-matrix-update!))
+
+(define (renderer:scale-view! s)
+  (update! *scaling-factor* (lambda (f) (- f (/ s 100.0))))
+  (perspective-matrix-update!))
 
 (define (renderer:shutdown)
   (fonts:shutdown)
@@ -59,11 +59,27 @@
   (with-gl-program
    'texture-2d
    (lambda (program-id)
-     (with-text-render-state
-      (lambda ()
-        (for-each
-         (lambda (e) (text.render (cadr e) program-id))
-         *scene-tree*)))))
+     (with-text-render-state program-id
+                             (lambda ()
+                               (for-each
+                                (lambda (e) (text.render (cadr e)))
+                                *scene-tree*)))))
+
+  ;; Render debug texts
+  (with-gl-program
+   'texture-2d
+   (lambda (program-id)
+     (with-overlay-text-render-state
+      program-id
+      (lambda () (for-each text.render
+                      (list (make-text (format "Scale factor: ~a" *scaling-factor*)
+                                       (make-box2d (make-vector2 10.0 (- *screen-height* 40.0)) (make-vector2 100.0 100.0))
+                                       '("assailand" 14)
+                                       (make-color 255 255 255 255))
+                            (make-text (format "Translation factor: [~a, ~a]" (vector2-x *translation-vector2*) (vector2-y *translation-vector2*))
+                                       (make-box2d (make-vector2 10.0 (- *screen-height* 25.0)) (make-vector2 100.0 100.0))
+                                       '("assailand" 14)
+                                       (make-color 255 255 255 255))))))))
 
   ;; TODO: iterate graph and render
   )

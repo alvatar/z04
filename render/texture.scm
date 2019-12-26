@@ -69,6 +69,6 @@
                      0 GL_BGRA_EXT GL_UNSIGNED_BYTE
                      (SDL_Surface-pixels texture-surf*)))
       ;; Unbind and free the surface
-      ;;(glBindTexture GL_TEXTURE_2D 0)
+      (glBindTexture GL_TEXTURE_2D 0)
       (SDL_FreeSurface texture-surf*)
       (values texture-id texture-width texture-height))))
