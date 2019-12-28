@@ -2,6 +2,8 @@
 ;; GL Program
 ;;
 
+(define *programs* (make-table)) ; name -> GLuint id
+
 ;;! Create a shader
 ;; .parameter Type of shader
 ;; .parameter Shader string
