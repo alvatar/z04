@@ -20,18 +20,20 @@
   (export renderer:init
           renderer:shutdown
           renderer:render
-          renderer:set-test-data!
+          renderer:load-scene!
           renderer:translate-view!
           renderer:scale-view!)
 
   (begin
-    (include "gl-util.scm")
-    (include "program.scm")
-    (include "color.scm")
     (include "box2d.scm")
-    (include "vbo.scm")
-    (include "texture.scm")
-    (include "text.scm")
-    (include "polyline.scm")
+    (include "color.scm")
+    (include "gl-util.scm")
     (include "layer.scm")
-    (include "render.scm")))
+    (include "polyline.scm")
+    (include "program.scm")
+    (include "render.scm")
+    (include "scenegraph.scm")
+    (include "text.scm")
+    (include "texture.scm")
+    (include "vbo.scm")
+    ))

@@ -43,14 +43,14 @@
       (renderer:init window-width window-height)
 
       ;;--------
-      (renderer:set-test-data!)
+      (renderer:load-scene!)
       ;;--------
       ;; (SDL_SetRelativeMouseMode SDL_TRUE)
 
       (let/cc exit
               (let ((event* (*->void* (alloc-SDL_Event)))
                     (mouse-down #f))
-                (let poll-events ()
+                (let loop ()
                   (if (= 1 (SDL_WaitEvent event*))
                       (cond ((= (SDL_Event-type event*) SDL_QUIT)
                              (exit))
@@ -68,7 +68,7 @@
                                (renderer:scale-view! s)))))
                   (renderer:render)
                   (SDL_GL_SwapWindow window)
-                  (poll-events))))
+                  (loop))))
 
       (renderer:shutdown)
 
