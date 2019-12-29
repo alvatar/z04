@@ -3,6 +3,7 @@
 ;;
 
 (define-type polyline
+  id: polyline-type
   constructor: make-polyline/internal
   points (num-points unprintable:)
   style
@@ -34,3 +35,18 @@
                 (polyline-points pl))
       (vertex-object.update! (polyline-vbo pl) vertices) ; vbo
       (polyline-dirty?-set! pl #f))))
+
+(define (with-polyline-render-state program-id f)
+  (check-gl-error
+   (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE *gl-perspective-matrix*))
+  (f))
+
+(define (polyline.render pl)
+  (vertex-object.render
+   (polyline-vbo pl)
+   GL_LINE_STRIP
+   (lambda ()
+     ;; (glGetAttribLocation program-id "position")
+     (let ((pos 0))
+       (glEnableVertexAttribArray pos)
+       (glVertexAttribPointer pos 2 GL_FLOAT GL_FALSE 0 #f)))))

@@ -59,10 +59,12 @@
   (fonts:shutdown)
   (programs:shutdown))
 
+(define *render-layers* #f)
+
 (define (renderer:load-scene!)
   (let [(graph (get-test-data))]
     (set! *scene-graph* graph)
-    (set! *render-layers* (build-layers graph))))
+    (set! *render-layers* (graph->layers graph))))
 
 (define (renderer:render)
   (let ((time-init (current-time)))
@@ -70,7 +72,7 @@
     (glClear GL_COLOR_BUFFER_BIT)
 
     (render-layers.render *render-layers*)
-(step)
+
     ;; Render debug texts
     (with-gl-program
      'texture-2d
@@ -90,7 +92,6 @@
                                          (make-box2d (make-vector2 10.0 (- *screen-height* 25.0)) (make-vector2 100.0 100.0))
                                          '("assailand" 25)
                                          (make-color 255 255 255 255))))))))))
-
 
 ;;
 ;; Fake data for testing

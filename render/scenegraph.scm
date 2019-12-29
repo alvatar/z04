@@ -1,16 +1,20 @@
 ;;
 ;; Scenegraph
 ;;
+;; A Scene graph is a list with internal references made of simple definitions of geometrical
+;; objects. It is transformed into a tree, with full information for rendering and transformations.
+;; This tree is made of nodes, starting from a root node (root:)
+;;
 
 (define-type node
-  id: graph-node
+  id: graph-node-type
   constructor: make-node/internal
   id type element
   dirty
   (parent unprintable:)
-  (previous unprintable:))
+  render-element)
 
-(define (make-node id type element parent #!optional previous)
+(define (make-node id type element parent)
   (make-node/internal id type element #f parent #f))
 
 (define (scene-data->scene-tree graph)
@@ -71,14 +75,13 @@
           (let [(node (car tree))]
             (case (node-type node)
               ((text:)
-               (render-layer-add-element layers 'default-layer node))
+               (render-layer.add-element layers 'default-layer node))
               ((polyline:)
-               (render-layer-add-element layers 'default-layer node))
+               (render-layer.add-element layers 'default-layer node))
               ((group:)
                (recur (node-element node))))
             (recur (cdr tree)))))
     layers))
 
-(define (build-layers graph)
+(define (graph->layers graph)
   (-> graph scene-data->scene-tree scene-tree->scene-layers))
-

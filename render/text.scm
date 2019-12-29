@@ -42,6 +42,7 @@
 ;;
 
 (define-type text
+  id: text-type
   constructor: make-text/internal
   content box2d font color
   dirty? texture (vertex-object unprintable:))
@@ -119,6 +120,9 @@
       (vertex-object.render
        GL_TRIANGLES
        (lambda ()
+         ;; (glGetAttribLocation program-id "position")
+         ;; attribute vec2 position = 0
+         ;; attribute vec2 texCoord = 1
          (glEnableVertexAttribArray 0)
          (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
          (glEnableVertexAttribArray 1)
