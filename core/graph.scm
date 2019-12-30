@@ -6,8 +6,6 @@
 ;; This tree is made of nodes, starting from a root node (root:)
 ;;
 
-
-
 ;; Get fake graph for testing
 (define (get-test-data)
   (let [(obj-uuid (uuid-v4))]
@@ -26,7 +24,8 @@
                    (points: (3 200) (100 400) (500 20) (20 3000)))
         (polyline: (id: ,(uuid-v4))
                    (points: (-200 100) (400 400) (20 400) (0 30)))
-        (ref: (id: ,(uuid-v4)) (object: ,obj-uuid))))
+        ;; (ref: (id: ,(uuid-v4)) (object: ,obj-uuid))
+        ))
       (text:
        (id: ,(uuid-v4))
        (content: "Hello CAD!")
@@ -35,7 +34,7 @@
        (box2d: (100.0 100.0) (40.0 34.0)))
       (text:
        (id: ,(uuid-v4))
-       (content: "Bye CAD!")
+       (content: "Step by Step")
        (font: ("assailand" 34))
        (color: (255 255 255 255))
        (box2d: (10.0 10.0) (40.0 34.0)))

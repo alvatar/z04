@@ -25,7 +25,13 @@
           renderer:load-scene!
           renderer:translate-view!
           renderer:scale-view!
-          (rename fonts:install render-fonts:install))
+          (rename fonts:install render-fonts:install)
+
+          scene-tree.add-node
+          scene-tree.remove-node
+          make-node
+          node-element
+          node-type)
 
   (begin
     (include "box2d.scm")

@@ -1,12 +1,21 @@
 (import (scheme base))
 
 (import (github.com/alvatar/base)
+        (github.com/alvatar/base functional)
         (github.com/alvatar/sdl2)
         (github.com/alvatar/ffi-utils))
 
 (import (core)
         (render))
 
+;; TODO: extract in library
+(define (vector-find f v)
+  (let [(l (vector-length v))]
+    (let loop ((idx 0))
+      (and (< idx l)
+           (if-let [val (f (vector-ref v idx))]
+                   val
+                   (loop (+ idx 1)))))))
 
 (define (main)
   (when (< (SDL_Init SDL_INIT_VIDEO) 0) (SDL_LogCritical (string-append "Error initializing SDL " (SDL_GetError))))
@@ -48,8 +57,17 @@
       (render-fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
       (render-fonts:install "assailand" 25 "fonts/assailand/hinted-Assailand-Medium.ttf")
       (render-fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
-      (renderer:load-scene! (core-graph:get-test-data))
+      (receive (render-tree render-layers)
+          (renderer:load-scene! (core-graph:get-test-data))
+        ;; (pp (vector-length (node-element render-tree)))
+        (let [(group (vector-find (lambda (x) (and (eq? group: (node-type x)) x)) (node-element render-tree)))]
+          ;;(pp group)
+          (println "***********************************")
+          ;; (pp (scene-tree.add-node render-tree (make-node "my-node" text: #f group 0)))
+          (pp (scene-tree.remove-node render-tree group))
+          ))
       ;;--------
+
       ;; (SDL_SetRelativeMouseMode SDL_TRUE)
       (let/cc exit
               (let ((event* (alloc-SDL_Event))

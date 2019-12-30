@@ -12,6 +12,7 @@
 (define *debug-texts*)
 
 (define *render-layers* #f)
+(define *render-tree* #f)
 
 
 
@@ -61,8 +62,9 @@
   (programs:shutdown))
 
 (define (renderer:load-scene! graph)
-  (set! *render-layers*
-        (-> graph graph->scene-tree scene-tree->scene-layers)))
+  (set! *render-tree* (graph->scene-tree graph))
+  (set! *render-layers* (scene-tree->scene-layers *render-tree*))
+  (values *render-tree* *render-layers*))
 
 (define (renderer:render)
   (let ((time-init (current-time)))
