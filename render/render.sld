@@ -1,7 +1,7 @@
 (define-library (render)
 
   (import (gambit))
-  (import (_match))
+  (import (github.com/alvatar/match))
   (import (srfi 28))
   (import (srfi 69))
 
