@@ -1,13 +1,9 @@
 ;;
-;; SceneGraph and SceneTree
-;;
-;; A Scene graph is a list with internal references made of simple definitions of geometrical
-;; objects. It is transformed into a tree, with full information for rendering and transformations.
-;; This tree is made of nodes, starting from a root node (root:)
+;; Render Tree
 ;;
 
 (define-type node
-  id: graph-node-type
+  id: tree-node-type
   constructor: make-node/internal
   id type element
   dirty
@@ -17,10 +13,38 @@
 (define (make-node id type element parent)
   (make-node/internal id type element #f parent #f))
 
-(define (graph->layers graph)
-  (-> graph scene-data->scene-tree scene-tree->scene-layers))
+(define (scene-tree.add-node node)
+  (unless (or (eq? (node-type (node-parent node)) group:)
+              (eq? (node-parent node) root:))
+    (error "node can only be added to a group"))
+  (match (node-parent node)
+         ((root: . ,data)
+          'TODO-ADD)
+         ((group: . ,data)
+          'TODO-ADD-TO-ELEMENT)))
 
-(define (scene-data->scene-tree graph)
+(define (scene-tree.remove-node node)
+  ;; TODO: when deleting many objects, it's cheaper to rebuild the list
+  'TODO)
+
+(define (scene-tree->scene-layers tree)
+  (let [(layers (make-render-layers))]
+    (let recur ((tree tree))
+      (if (null? tree)
+          '()
+          (let [(node (car tree))]
+            (case (node-type node)
+              ((text:)
+               (render-layer.add-element layers 'default-layer node))
+              ((polyline:)
+               (render-layer.add-element layers 'default-layer node))
+              ((group:)
+               (recur (node-element node))))
+            (recur (cdr tree)))))
+    layers))
+
+;;! Transform a graph into a renderable Scene Tree
+(define (graph->scene-tree graph)
   (define objects (make-table))
   (define (get-id-or-create ls) (if-let [idl (assq id: ls)] (cadr idl) (uuid-v4)))
   (when-let
@@ -67,33 +91,3 @@
                            ref)
                          (error "reference does not exist:" ref)))
                 (else (error "unknown type in graph:" (car graph))))))))
-
-(define (scene-tree.add-node node)
-  (unless (or (eq? (node-type (node-parent node)) group:)
-              (eq? (node-parent node) root:))
-    (error "node can only be added to a group"))
-  (match (node-parent node)
-         ((root: . ,data)
-          'TODO-ADD)
-         ((group: . ,data)
-          'TODO-ADD-TO-ELEMENT)))
-
-(define (scene-tree.remove-node node)
-  ;; TODO: when deleting many objects, it's cheaper to rebuild the list
-  'TODO)
-
-(define (scene-tree->scene-layers tree)
-  (let [(layers (make-render-layers))]
-    (let recur ((tree tree))
-      (if (null? tree)
-          '()
-          (let [(node (car tree))]
-            (case (node-type node)
-              ((text:)
-               (render-layer.add-element layers 'default-layer node))
-              ((polyline:)
-               (render-layer.add-element layers 'default-layer node))
-              ((group:)
-               (recur (node-element node))))
-            (recur (cdr tree)))))
-    layers))

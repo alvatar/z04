@@ -1,39 +1,41 @@
 (define-library (render)
 
-  (import (gambit))
-  (import (github.com/alvatar/match))
-  (import (srfi 28))
-  (import (srfi 69))
+  (import (gambit)
+          (_match)
+          (srfi 28)
+          (srfi 69))
 
-  (import (github.com/alvatar/base))
-  (import (github.com/alvatar/base alist))
-  (import (github.com/alvatar/base functional))
-  (import (github.com/alvatar/base functional combinator))
-  (import (github.com/alvatar/base memoization))
-  (import (github.com/alvatar/gles2))
-  (import (github.com/alvatar/ffi-utils))
-  (import (github.com/alvatar/sdl2))
-  (import (github.com/alvatar/sdl2 ttf))
-  (import (github.com/alvatar/math matrix))
-  (import (github.com/alvatar/math vector2))
+  (import (github.com/alvatar/base)
+          (github.com/alvatar/base alist)
+          (github.com/alvatar/base functional)
+          (github.com/alvatar/base functional combinator)
+          (github.com/alvatar/base memoization)
+          (github.com/alvatar/gles2)
+          (github.com/alvatar/ffi-utils)
+          (github.com/alvatar/sdl2)
+          (github.com/alvatar/sdl2 ttf)
+          (github.com/alvatar/math matrix)
+          (github.com/alvatar/math vector2))
+
+  (import (core))
 
   (export renderer:init
           renderer:shutdown
           renderer:render
           renderer:load-scene!
           renderer:translate-view!
-          renderer:scale-view!)
+          renderer:scale-view!
+          (rename fonts:install render-fonts:install))
 
   (begin
     (include "box2d.scm")
-    (include "color.scm")
     (include "gl-util.scm")
     (include "layer.scm")
     (include "polyline.scm")
     (include "program.scm")
     (include "render.scm")
-    (include "scenegraph.scm")
     (include "text.scm")
     (include "texture.scm")
+    (include "tree.scm")
     (include "vbo.scm")
     ))

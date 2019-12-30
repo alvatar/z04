@@ -1,10 +1,11 @@
 (import (scheme base))
 
-(import (github.com/alvatar/sdl2))
-(import (github.com/alvatar/ffi-utils))
+(import (github.com/alvatar/base)
+        (github.com/alvatar/sdl2)
+        (github.com/alvatar/ffi-utils))
 
-(import (base))
-(import (render))
+(import (core)
+        (render))
 
 
 (define (main)
@@ -43,29 +44,40 @@
       (renderer:init window-width window-height)
 
       ;;--------
-      (renderer:load-scene!)
+      ;; TODO: load based on definitions form the scene graph
+      (render-fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
+      (render-fonts:install "assailand" 25 "fonts/assailand/hinted-Assailand-Medium.ttf")
+      (render-fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
+      (renderer:load-scene! (core-graph:get-test-data))
       ;;--------
       ;; (SDL_SetRelativeMouseMode SDL_TRUE)
-
       (let/cc exit
-              (let ((event* (*->void* (alloc-SDL_Event)))
-                    (mouse-down #f))
+              (let ((event* (alloc-SDL_Event))
+                    (mouse-down #f)
+                    (key-down #f))
                 (let loop ()
                   (if (= 1 (SDL_WaitEvent event*))
                       (cond ((= (SDL_Event-type event*) SDL_QUIT)
                              (exit))
+                            ((= (SDL_Event-type event*) SDL_KEYDOWN)
+                             (let [(key-event* (*->void* event*))]
+                               (when (zero? (SDL_KeyboardEvent-repeat key-event*))
+                                 (let [(key (-> key-event* SDL_KeyboardEvent-keysym SDL_Keysym-sym))]
+                                   (cond ((= key SDLK_SPACE)
+                                          (set! key-down 'space)))))))
+                            ((= (SDL_Event-type event*) SDL_KEYUP)
+                             (set! key-down #f))
                             ((= (SDL_Event-type event*) SDL_MOUSEBUTTONDOWN)
                              (set! mouse-down #t))
                             ((= (SDL_Event-type event*) SDL_MOUSEBUTTONUP)
                              (set! mouse-down #f))
                             ((= (SDL_Event-type event*) SDL_MOUSEMOTION)
                              (when mouse-down
-                               (let ((x (SDL_MouseMotionEvent-xrel event*))
-                                     (y (SDL_MouseMotionEvent-yrel event*)))
-                                 (renderer:translate-view! x y))))
+                               (let [(mouse-event* (*->void* event*))]
+                                 (renderer:translate-view! (SDL_MouseMotionEvent-xrel mouse-event*)
+                                                           (SDL_MouseMotionEvent-yrel mouse-event*)))))
                             ((= (SDL_Event-type event*) SDL_MOUSEWHEEL)
-                             (let ((s (SDL_MouseWheelEvent-y event*)))
-                               (renderer:scale-view! s)))))
+                             (renderer:scale-view! (SDL_MouseWheelEvent-y (*->void* event*))))))
                   (renderer:render)
                   (SDL_GL_SwapWindow window)
                   (loop))))

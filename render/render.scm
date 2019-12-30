@@ -11,7 +11,8 @@
 
 (define *debug-texts*)
 
-(define *scene-graph* '())
+(define *render-layers* #f)
+
 
 
 ;;
@@ -59,12 +60,9 @@
   (fonts:shutdown)
   (programs:shutdown))
 
-(define *render-layers* #f)
-
-(define (renderer:load-scene!)
-  (let [(graph (get-test-data))]
-    (set! *scene-graph* graph)
-    (set! *render-layers* (graph->layers graph))))
+(define (renderer:load-scene! graph)
+  (set! *render-layers*
+        (-> graph graph->scene-tree scene-tree->scene-layers)))
 
 (define (renderer:render)
   (let ((time-init (current-time)))
@@ -94,47 +92,20 @@
                                          (make-color 255 255 255 255))))))))))
 
 ;;
-;; Fake data for testing
+;; Utils
 ;;
 
-(define (get-test-data)
-  ;; TODO: load based on definitions form the scene graph
-  (fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
-  (fonts:install "assailand" 25 "fonts/assailand/hinted-Assailand-Medium.ttf")
-  (fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
+(define (SDL_Color->color sdl-color)
+  (make-color
+   (SDL_Color-r sdl-color)
+   (SDL_Color-g sdl-color)
+   (SDL_Color-b sdl-color)
+   (SDL_Color-a sdl-color)))
 
-  (let [(obj-uuid (uuid-v4))]
-    `(root:
-      (objects:
-       ((id: ,obj-uuid) (polyline: (points: (100.0 50.0) (500.0 400.0) (200.0 20.0) (33.0 100.0))))
-       ((id: ,(uuid-v4)) (polyline: (points: (9 1) (0 0) (2 2) (3 3)))))
-      (group:
-       (id: ,(uuid-v4))
-       (prop: (name: "my group")
-              (tags: "main"))
-       (elements:
-        (polyline: (id: ,(uuid-v4)) (prop: (tags: "helpers"))
-                   (points: (1 400) (0 0) (20 200) (300 800)))
-        (polyline: (id: ,(uuid-v4))
-                   (points: (3 200) (100 400) (500 20) (20 3000)))
-        (polyline: (id: ,(uuid-v4))
-                   (points: (-200 100) (400 400) (20 400) (0 30)))
-        (ref: (id: ,(uuid-v4)) (object: ,obj-uuid))))
-      (text:
-       (id: ,(uuid-v4))
-       (content: "Hello CAD!")
-       (font: ("assailand" 34))
-       (color: (255 255 255 255))
-       (box2d: (100.0 100.0) (40.0 34.0)))
-      (text:
-       (id: ,(uuid-v4))
-       (content: "Bye CAD!")
-       (font: ("assailand" 34))
-       (color: (255 255 255 255))
-       (box2d: (10.0 10.0) (40.0 34.0)))
-      (text:
-       (id: ,(uuid-v4))
-       (content: "Looking good...")
-       (font: ("assailand" 34))
-       (color: (255 255 255 255))
-       (box2d: (500.0 10.0) (40.0 34.0))))))
+(define-memoized (color->SDL_Color color)
+  (let ((sdl-color* (alloc-SDL_Color)))
+    (SDL_Color-r-set! sdl-color* (color-r color))
+    (SDL_Color-g-set! sdl-color* (color-g color))
+    (SDL_Color-b-set! sdl-color* (color-b color))
+    (SDL_Color-a-set! sdl-color* (color-a color))
+    (*->SDL_Color sdl-color*)))

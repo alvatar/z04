@@ -42,7 +42,7 @@
         (render-element-previous-set! next previous))))))
 
 ;;
-;; Render Layer
+;; Scene Layer
 ;;
 ;; A layer is comprised of sublayers. Each sublayer is a doubly-linked list of render-element
 
@@ -75,7 +75,7 @@
                 layer))
    (make-render-layer)))
 
-(define (render-layer.for-each-sub f sub)
+(define (render-layer.sublayer-for-each f sub)
   (let recur [(e-head sub)]
     (when e-head
       (f e-head)
@@ -107,8 +107,8 @@
         (with-text-render-state
          program-id
          (lambda ()
-           (render-layer.for-each-sub (compose text.render node-element render-element-node)
-                                      (sublayer-first (render-layer-texts-sublayer layer)))))))
+           (render-layer.sublayer-for-each (compose text.render node-element render-element-node)
+                                           (sublayer-first (render-layer-texts-sublayer layer)))))))
      ;; Render lines
      (with-gl-program
       'lines
@@ -116,5 +116,5 @@
         (with-polyline-render-state
          program-id
          (lambda ()
-           (render-layer.for-each-sub (compose polyline.render node-element render-element-node)
-                                      (sublayer-first (render-layer-polylines-sublayer layer))))))))))
+           (render-layer.sublayer-for-each (compose polyline.render node-element render-element-node)
+                                           (sublayer-first (render-layer-polylines-sublayer layer))))))))))

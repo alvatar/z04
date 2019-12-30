@@ -2,6 +2,13 @@
 ;; Fonts
 ;;
 
+;;
+;; TODO: real font renderer
+;; https://github.com/akrinke/Font-Stash
+;; https://github.com/grimfang4/SDL_FontCache
+;; https://github.com/nothings/stb
+;;
+
 (define-type font
   name size data)
 
