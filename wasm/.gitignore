@@ -1,0 +1,6 @@
+out/
+gambit.h
+*.html
+*.js
+*.wasm
+*.bc
