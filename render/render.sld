@@ -26,9 +26,13 @@
           renderer:translate-view!
           renderer:scale-view!
           (rename fonts:install render-fonts:install)
+          scene-tree.add-node!
+          scene-tree.alter-node!
+          scene-tree.remove-node!
+          scene-tree.find-child
+          scene-tree.filter-children
 
-          scene-tree.add-node
-          scene-tree.remove-node
+          ;; TMP
           make-node
           node-element
           node-type)

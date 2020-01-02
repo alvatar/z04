@@ -25,7 +25,7 @@
   (polyline-dirty?-set! pl #t))
 
 (define (polyline.refresh-vbo! pl)
-  (when (polyline-dirty?-set! pl #f)
+  (when (polyline-dirty? pl)
     (let [(vertices (make-f32vector (* (polyline-num-points pl) 2)))
           (n 0)]
       (for-each (lambda (p)

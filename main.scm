@@ -8,15 +8,6 @@
 (import (core)
         (render))
 
-;; TODO: extract in library
-(define (vector-find f v)
-  (let [(l (vector-length v))]
-    (let loop ((idx 0))
-      (and (< idx l)
-           (if-let [val (f (vector-ref v idx))]
-                   val
-                   (loop (+ idx 1)))))))
-
 (define (main)
   (when (< (SDL_Init SDL_INIT_VIDEO) 0) (SDL_LogCritical (string-append "Error initializing SDL " (SDL_GetError))))
 
@@ -28,12 +19,12 @@
   (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
   (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
   (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-  (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
+  ;;(SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
   (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
   (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
   (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)
   (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-  (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 24)
+  ;;(SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 24)
 
   (let* ((mode* (alloc-SDL_DisplayMode))
          (_ (SDL_GetDesktopDisplayMode 0 mode*))
@@ -60,11 +51,12 @@
       (receive (render-tree render-layers)
           (renderer:load-scene! (core-graph:get-test-data))
         ;; (pp (vector-length (node-element render-tree)))
-        (let [(group (vector-find (lambda (x) (and (eq? group: (node-type x)) x)) (node-element render-tree)))]
+        (let [(group (scene-tree.find-child (cut eq? (node-type <>) group:) render-tree))]
           ;;(pp group)
           (println "***********************************")
           ;; (pp (scene-tree.add-node render-tree (make-node "my-node" text: #f group 0)))
-          (pp (scene-tree.remove-node render-tree group))
+          (scene-tree.remove-node! group)
+          (pp render-tree)
           ))
       ;;--------
 

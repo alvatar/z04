@@ -1,5 +1,45 @@
+;;  ** Render layers architecture **
+;;
+;;  Elements (sorted to reduce changes, for example by color)
+;;  +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+   +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+
+;;  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+;;  +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+   +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+
+;;
+;;  Sublayers (groups elements according to type to reduce state change)
+;;  +-------------+ +-------------+   +-------------+ +-------------+
+;;  |             | |             |   |             | |             |
+;;  +-------------+ +-------------+   +-------------+ +-------------+
+;;
+;;  Layers (groups arbitrary objects at visual level)
+;;  +-----------------------------+   +-----------------------------+
+;;  |                             |   |                             |
+;;  +-----------------------------+   +-----------------------------+
+
+
+;;! Build scene layers from a Scene Tree, for rendering
+(define (scene-tree->scene-layers root)
+  (let [(layers (make-render-layers))]
+    (let recur-level ((level (node-element root)))
+      (let [(level-length (vector-length level))]
+        (let next-element ((idx 0))
+          (when (< idx level-length)
+            (let [(node (vector-ref level idx))]
+              (case (node-type node)
+                ((text:)
+                 (render-layer.add-element! layers 'default-layer node))
+                ((polyline:)
+                 (render-layer.add-element! layers 'default-layer node))
+                ((group:)
+                 (recur-level (node-element node))))
+              (next-element (+ idx 1)))))))
+    layers))
+
 ;;
 ;; Render Element
+;; A render element is a wrapper of the Render Node, so it is traversed in a way optimized
+;; for rendering, instead of the hierarchy of the scene. Sublayers group elements by type
+;; to reduce state changes. They then sort by parameter data, to further reduce them.
+;; TODO: implement sort by parameter data, such as color.
 ;;
 
 (define-type render-element
@@ -8,7 +48,7 @@
   previous
   next)
 
-(define (render-element.add sublayer re)
+(define (render-element.add! sublayer re)
   (if-let [end (sublayer-last sublayer)]
           (begin
             (render-element-previous-set! re end)
@@ -16,7 +56,7 @@
           (sublayer-first-set! sublayer re))
   (sublayer-last-set! sublayer re))
 
-(define (render-element.remove re)
+(define (render-element.remove! re)
   (let [(sl (render-element-sublayer render-element))]
     (cond
      ;; Element is first in render layer
@@ -41,10 +81,16 @@
         (render-element-next-set! previous next)
         (render-element-previous-set! next previous))))))
 
+;; TODO: swap render-elements (for drawing order)
+
+;; Note: Updates to render-elements don't happen here, because these are just links
+;; to nodes, which contain the actual renderable
+
 ;;
 ;; Scene Layer
 ;;
-;; A layer is comprised of sublayers. Each sublayer is a doubly-linked list of render-element
+;; A layer is comprised of sublayers. Each sublayer is a doubly-linked list of render-element(s)
+;; that leverage a single drawing state and shader program.
 
 (define-type sublayer
   constructor: make-sublayer/internal
@@ -62,7 +108,7 @@
 (define (make-render-layer)
   (make-render-layer/internal (make-sublayer) (make-sublayer)))
 
-(define (render-layer.add-element layers layer-id node)
+(define (render-layer.add-element! layers layer-id node)
   (hash-table-update!/default
    layers
    layer-id
@@ -70,8 +116,8 @@
    (lambda (layer) (let [(new (make-render-element node layer #f #f))]
                 (node-render-element-set! node new)
                 (case (node-type node)
-                  ((text:) (render-element.add (render-layer-texts-sublayer layer) new))
-                  ((polyline:) (render-element.add (render-layer-polylines-sublayer layer) new)))
+                  ((text:) (render-element.add! (render-layer-texts-sublayer layer) new))
+                  ((polyline:) (render-element.add! (render-layer-polylines-sublayer layer) new)))
                 layer))
    (make-render-layer)))
 

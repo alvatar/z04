@@ -43,6 +43,8 @@
 
 (define (renderer:init width height)
   (glEnable GL_MULTISAMPLE_EXT)
+  (glDepthFunc GL_NEVER)
+  (glDisable GL_DEPTH_TEST)
   (renderer:update-view! width height)
   (fonts:init)
   (programs:init))

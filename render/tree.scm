@@ -1,3 +1,33 @@
+;; TODO: extract in library
+(define (vector-swap! vec i j)
+  (let [(x (vector-ref vec i))]
+    (vector-set! vec i (vector-ref vec j))
+    (vector-set! vec j x)))
+
+(define (vector-find f v)
+  (let [(l (vector-length v))]
+    (let loop [(idx 0)]
+      (and (< idx l)
+           (if-let [val (f (vector-ref v idx))]
+                   val
+                   (loop (+ idx 1)))))))
+
+(define (vector-filter f v)
+  (let* [(vlength (vector-length v))
+         (newvec (make-vector vlength))]
+    (let loop [(idx 0)
+               (new-idx 0)]
+      (if (< idx vlength)
+          (let [(val (vector-ref v idx))]
+            (if (f val)
+                (begin (vector-set! newvec new-idx val)
+                       (loop (+ idx 1)
+                             (+ new-idx 1)))
+                (loop (+ idx 1)
+                      new-idx)))
+          (begin (vector-shrink! newvec new-idx)
+                 newvec)))))
+
 ;;
 ;; Render Tree
 ;;
@@ -6,32 +36,39 @@
   id: tree-node-type
   constructor: make-node/internal
   id type element
-  dirty
   (parent unprintable:)
   child-id
   (render-element unprintable:))
 
 (define (make-node id type element parent child-id)
-  (make-node/internal id type element #f parent child-id #f))
+  ;; The render-element is set when creating render-layers
+  (make-node/internal id type element parent child-id #f))
 
-(define (scene-tree.add-node tree node)
+;;! Add Node. The node needs to have the parent defined so it's ready for insertion.
+(define (scene-tree.add-node! node)
   (case (node-type (node-parent node))
     ((group: root:)
      (let* [(parent (node-parent node))
             (siblings (node-element parent))]
        (node-child-id-set! node (vector-length siblings))
        (node-element-set! parent (vector-append siblings (vector node)))
-       tree))
+       ;; Add the element to a render layers
+       ;; TODO: layer Id should be the current active layer
+       (render-layer.add-element! *render-layers* 'default-layer node)))
     (else
      (error "node can only be added to a group or root"))))
 
-;; TODO: extract in library
-(define (vector-swap! vec i j)
-  (let ((x (vector-ref vec i)))
-    (vector-set! vec i (vector-ref vec j))
-    (vector-set! vec j x)))
+;;! Modify a node with a new element
+(define (scene-tree.alter-node! node element)
+  (node-element-set! node element)
+  (case (node-type node)
+    ((text:) (text.refresh! element))
+    ((polyline:) (polyline.refresh! element))
+    (else
+     (error "only text and polyline altering supported"))))
 
-(define (scene-tree.remove-node tree node)
+;;! Remove node
+(define (scene-tree.remove-node! node)
   ;; TODO: when deleting many objects, it's cheaper to rebuild the list
   (case (node-type (node-parent node))
     ((group: root:)
@@ -44,27 +81,18 @@
          (unless (= node-id node-id last-id)
            (node-child-id-set! (vector-ref siblings last-id) node-id)
            (vector-swap! siblings node-id last-id)))
-       (vector-shrink! siblings (- num-siblings 1))
-       tree))
+       (render-element.remove! (node-render-element node))
+       (vector-shrink! siblings (- num-siblings 1))))
     (else
      (error "node can only be added to a group or root"))))
 
-(define (scene-tree->scene-layers root)
-  (let [(layers (make-render-layers))]
-    (let recur-level ((level (node-element root)))
-      (let [(level-length (vector-length level))]
-        (let next-element ((idx 0))
-          (when (< idx level-length)
-            (let [(node (vector-ref level idx))]
-              (case (node-type node)
-                ((text:)
-                 (render-layer.add-element layers 'default-layer node))
-                ((polyline:)
-                 (render-layer.add-element layers 'default-layer node))
-                ((group:)
-                 (recur-level (node-element node))))
-              (next-element (+ idx 1)))))))
-    layers))
+;;! Find element in children
+(define (scene-tree.find-child node f)
+  (vector-find (lambda (x) (and (f) x)) (node-element node)))
+
+;;! Filter elements in children
+(define (scene-tree.filter-children node f)
+  (vector-filter f (node-element node)))
 
 ;;! Transform a graph into a renderable Scene Tree
 (define (graph->scene-tree graph)
@@ -95,7 +123,6 @@
                                    (error "no elements in group" data))
                            (recur parent (cdr graph) (+ child-id 1))))
                     ((text: . ,data)
-                     ;; TODO: types
                      (cons (make-node (get-id-or-create data)
                                       text:
                                       (make-text (get data content:)
