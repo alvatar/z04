@@ -4,11 +4,10 @@
 (define (uuid-v4 #!optional [randfn random-integer])
   (define hex-vals (string->list "0123456789abcdef"))
   (define uuid-v4-pattern "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx")
-  (letrec ([x-replace (lambda () (list-ref hex-vals (randfn 16)))]
-           [y-replace (lambda () (list-ref hex-vals (bitwise-ior (bitwise-and (randfn 16) #x08) #x03)))]
-           [map-proc (lambda (c)
-                       (cond
+  (define (x-replace) (list-ref hex-vals (randfn 16)))
+  (define (y-replace) (list-ref hex-vals (bitwise-ior (bitwise-and (randfn 16) #x08) #x03)))
+  (define (map-proc c) (cond
                         ((eq? c #\x) (x-replace))
                         ((eq? c #\y) (y-replace))
-                        (else c)))])
-    (string-map map-proc uuid-v4-pattern)))
+                        (else c)))
+  (string-map map-proc uuid-v4-pattern))

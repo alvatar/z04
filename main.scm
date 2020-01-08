@@ -1,17 +1,17 @@
-(import (scheme base))
+(import (gambit))
 
-(import (github.com/alvatar/base)
-        (github.com/alvatar/base functional)
-        (github.com/alvatar/sdl2)
-        (github.com/alvatar/ffi-utils))
+(import (base)
+        (base functional)
+        (sdl2)
+        (ffi-utils))
 
 (import (core)
         (render))
 
 (define (main)
-  (when (< (SDL_Init SDL_INIT_VIDEO) 0) (SDL_LogCritical (string-append "Error initializing SDL " (SDL_GetError))))
+  (when (< (SDL_Init SDL_INIT_VIDEO) 0) (error (string-append "Error initializing SDL " (SDL_GetError))))
 
-  (SDL_Log "Initializing...\n")
+  (println "SDL Initializing...")
   (SDL_GL_SetAttribute SDL_GL_MULTISAMPLEBUFFERS 1)
   (SDL_GL_SetAttribute SDL_GL_MULTISAMPLESAMPLES 16)
   (SDL_GL_SetAttribute SDL_GL_ALPHA_SIZE 8)
@@ -45,13 +45,13 @@
 
       ;;--------
       ;; TODO: load based on definitions form the scene graph
-      (render-fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
-      (render-fonts:install "assailand" 25 "fonts/assailand/hinted-Assailand-Medium.ttf")
-      (render-fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
+      ;; (render-fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
+      ;; (render-fonts:install "assailand" 25 "fonts/assailand/hinted-Assailand-Medium.ttf")
+      ;; (render-fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
       (receive (render-tree render-layers)
           (renderer:load-scene! (core-graph:get-test-data))
         ;; (pp (vector-length (node-element render-tree)))
-        (let [(group (scene-tree.find-child (cut eq? (node-type <>) group:) render-tree))]
+        (let [(group (scene-tree.find-child (lambda (n) (eq? (node-type n) group:)) render-tree))]
           ;;(pp group)
           (println "***********************************")
           ;; (pp (scene-tree.add-node render-tree (make-node "my-node" text: #f group 0)))
@@ -60,7 +60,7 @@
           ))
       ;;--------
 
-      ;; (SDL_SetRelativeMouseMode SDL_TRUE)
+      (SDL_SetRelativeMouseMode SDL_TRUE)
       (let/cc exit
               (let ((event* (alloc-SDL_Event))
                     (mouse-down #f)
@@ -96,6 +96,9 @@
 
       (SDL_DestroyWindow window)
       (SDL_Quit)
-      (SDL_Log "Exiting..."))))
+      (println "Exiting..."))
+    ))
 
 (main)
+
+

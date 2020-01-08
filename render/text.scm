@@ -83,7 +83,7 @@
         text)))
   text)
 
-(define (text.update! text #!key :content :box2d :font :color)
+(define (text.update! text #!key content box2d font color)
   (when content (text-content-set! text content))
   (when box2d (text-box2d-set! text box2d))
   (when font (text-font-set! text font))

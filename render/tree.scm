@@ -62,8 +62,8 @@
 (define (scene-tree.alter-node! node element)
   (node-element-set! node element)
   (case (node-type node)
-    ((text:) (text.refresh! element))
-    ((polyline:) (polyline.refresh! element))
+    ((text:) (text.update! element))
+    ((polyline:) (polyline.update! element))
     (else
      (error "only text and polyline altering supported"))))
 

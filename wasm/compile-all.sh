@@ -21,8 +21,13 @@ SCHEME_LIBS_DIR="../.."
 LIBS_OUTDIR=$WORKDIR/$OUTDIR/scheme-libs
 mkdir -p $LIBS_OUTDIR
 
+STD_OUTDIR=$WORKDIR/$OUTDIR/scheme-stdlibs
+mkdir -p $STD_OUTDIR
+
 C_FLAGS="-Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-pointer-types"
 
+SCHEME_C_FILES=""
+SCHEME_BC_FILES=""
 
 #########################################################
 # Gambit Runtime
@@ -66,7 +71,7 @@ COMP_LIB_PR="$COMP_GEN $FLAGS_OPT $DEFS_LIB $DEFS_SH -D___LIBRARY -D___PRIMAL"
 COMP_LIB_PR_RTS="$COMP_GEN $FLAGS_OPT_RTS $DEFS_LIB $DEFS_SH -D___LIBRARY -D___PRIMAL"
 COMP_APP="$COMP_GEN $FLAGS_OPT $DEFS_SH"
 
-GAMBIT_OUTDIR=out/gambit/
+GAMBIT_OUTDIR=out/gambit
 
 compile_gambit_runtime() {
     echo "Compiling Gambit..."
@@ -136,20 +141,64 @@ fi
 
 
 #########################################################
+# Std libraries
+#########################################################
+
+# STD_LIBS="
+# scheme.base.scm
+# gambit.scm
+# "
+
+# for lib in $STD_LIBS; do
+#     FILENAME=${lib/.scm/}
+#     echo "Compiling Gambit library" ${FILENAME/./\/} "..."
+#     # Only add to BC files to avoid linking them with `gsc -link`
+#     TARGET_FILE=$STD_OUTDIR/$FILENAME
+#     SCHEME_BC_FILES="${SCHEME_BC_FILES} $TARGET_FILE.bc"
+#     cd $STD_DIR
+#     gsc -:search=./,search=.. -c -o $TARGET_FILE.c -module-ref ${lib/./\/} $lib
+#     emcc -I$WORKDIR -c $TARGET_FILE.c $C_FLAGS -o $TARGET_FILE.bc
+#     cd $WORKDIR
+# done
+
+STD_LIBS="
+srfi/28/28
+srfi/69/69
+"
+
+for lib in $STD_LIBS; do
+    MODULE=$(dirname $lib)
+    echo "Compiling Gambit library" ${MODULE} "..."
+    mkdir -p $STD_OUTDIR/$MODULE
+    gsc -:search=./,search=.. -c -o $STD_OUTDIR/$MODULE.c -module-ref $MODULE $GAMBIT_LIB_DIR/$lib.sld
+    emcc -I$WORKDIR -c $STD_OUTDIR/$MODULE.c $C_FLAGS -o $STD_OUTDIR/$MODULE.bc
+    SCHEME_C_FILES="${SCHEME_C_FILES} $STD_OUTDIR/$MODULE.c"
+    SCHEME_BC_FILES="${SCHEME_BC_FILES} $STD_OUTDIR/$MODULE.bc"
+done
+
+gsc -:search=./,search=.. -c -o out/std.c -module-ref std ../std/std.scm
+emcc -I$WORKDIR -c out/std.c $C_FLAGS -o out/std.bc
+SCHEME_C_FILES="${SCHEME_C_FILES} out/std.c"
+SCHEME_BC_FILES="${SCHEME_BC_FILES} out/std.bc"
+
+
+#########################################################
 # Scheme Libraries
 #########################################################
 
 SCHEME_LIBS="
+base/base.sld
 base/alist/alist.sld
 base/functional/functional.sld
-base/functional/combinator/combinator.sld
-base/memoization/memoization.sld
+ffi-utils/ffi-utils.sld
 math/matrix/matrix.sld
+base/memoization/memoization.sld
 math/vector2/vector2.sld
 sdl2/sdl2.sld
 sdl2/ttf/ttf.sld
 gles2/gles2.sld
 "
+#base/functional/combinator/combinator.sld
 
 EMCC_LIB_FLAGS="-s USE_SDL=2 -s USE_SDL_TTF=2"
 
@@ -159,8 +208,10 @@ for lib in $SCHEME_LIBS; do
     FILE=`basename $SCHEME_LIBS_DIR/$lib`
     LOCAL_DIR=`dirname $lib`
     TARGET_FILE=$(sed -E 's/(.sld|.scm)//g' <<< $LIBS_OUTDIR/$LOCAL_DIR/$FILE)
+    SCHEME_C_FILES="${SCHEME_C_FILES} $TARGET_FILE.c"
+    SCHEME_BC_FILES="${SCHEME_BC_FILES} $TARGET_FILE.bc"
     cd $SOURCE_DIR
-    gsc -c -ld-options '$CLANG_FLAGS' $FILE
+    gsc -c -module-ref $(dirname ${lib}) $FILE
     mkdir -p $LIBS_OUTDIR/$LOCAL_DIR
     cp ${FILE//.sld}.c $LIBS_OUTDIR/$LOCAL_DIR
     emcc $EMCC_LIB_FLAGS -I$WORKDIR -c $TARGET_FILE.c $C_FLAGS -o $TARGET_FILE.bc
@@ -175,25 +226,47 @@ done
 SCHEME_PROJ_LIBS="
 core/core.sld
 render/render.sld
-main.scm
 "
 
 for lib in $SCHEME_PROJ_LIBS; do
     echo "Compiling Scheme project file" $lib "..."
     LOCAL_DIR=`dirname $lib`
     TARGET_FILE=$(sed -E 's/(.sld|.scm)//g' <<< $PROJ_OUTDIR/$lib)
+    SCHEME_C_FILES="${SCHEME_C_FILES} $TARGET_FILE.c"
+    SCHEME_BC_FILES="${SCHEME_BC_FILES} $TARGET_FILE.bc"
     cd $SCHEME_PROJ_DIR
     mkdir -p $PROJ_OUTDIR/$LOCAL_DIR
-    gsc -:search=./,search=.. -o $TARGET_FILE.c -c $lib
+    #gsc -:search=./,search=.. -c -o $TARGET_FILE.c -e '(import _define-library/debug)' $lib > $TARGET_FILE.expansion.scm
+    #gsc -:search=./,search=.. -c -o $TARGET_FILE.c -expansion $lib > $TARGET_FILE.expansion.scm
+    gsc -:search=./,search=.. -c -o $TARGET_FILE.c $lib
     emcc -I$WORKDIR -c $TARGET_FILE.c $C_FLAGS -o $TARGET_FILE.bc
     cd $WORKDIR
 done
+
+echo "Compiling Scheme main..."
+cd $SCHEME_PROJ_DIR
+gsc -:search=./,search=.. -c -o $PROJ_OUTDIR/main.c -expansion main.scm > main.scm.expansion.
+cd $WORKDIR
+emcc -I$WORKDIR -c -o $PROJ_OUTDIR/main.bc $PROJ_OUTDIR/main.c
 
 
 #########################################################
 # Final compilation
 #########################################################
 
-gsc -link -o $OUTDIR/app_.c $(find $PROJ_OUTDIR $LIBS_OUTDIR -iname "*.c" | tr "\n" " ")
+#echo $SCHEME_C_FILES
+#echo $SCHEME_BC_FILES
+
+echo "Compiling link file..."
+gsc -warnings -link -o $OUTDIR/app_.c -nopreload $SCHEME_C_FILES $PROJ_OUTDIR/main.c
 emcc -I$WORKDIR $OUTDIR/app_.c -c -o $OUTDIR/app_.bc
-emcc $EMCC_LIB_FLAGS -s WASM=0 $OUTDIR/libgambit.bc $OUTDIR/app_.bc $(find $PROJ_OUTDIR $LIBS_OUTDIR -iname "*.bc" | tr "\n" " ") -o app.html
+
+#echo $SCHEME_BC_FILES
+
+echo "Linking..."
+emcc $EMCC_LIB_FLAGS -s WASM=1 \
+     $OUTDIR/libgambit.bc \
+     $SCHEME_BC_FILES \
+     $PROJ_OUTDIR/main.bc \
+     $OUTDIR/app_.bc \
+     -o app.html
