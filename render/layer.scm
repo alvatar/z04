@@ -147,15 +147,16 @@
    layers
    (lambda (id layer)
      ;; Render texts
-     ;; (with-gl-program
-     ;;  'texture-2d
-     ;;  (lambda (program-id)
-     ;;    (with-text-render-state
-     ;;     program-id
-     ;;     (lambda ()
-     ;;       ;; (compose text.render node-element render-element-node)
-     ;;       (render-layer.sublayer-for-each (lambda (e) (-> e render-element-node node-element text.render))
-     ;;        (sublayer-first (render-layer-texts-sublayer layer)))))))
+     (with-gl-program
+      'texture-2d
+      (lambda (program-id)
+        (with-text-render-state
+         program-id
+         (lambda ()
+           ;; (compose text.render node-element render-element-node)
+           (let [(text-render (text.render program-id))]
+             (render-layer.sublayer-for-each (lambda (e) (-> e render-element-node node-element text-render))
+                                             (sublayer-first (render-layer-texts-sublayer layer))))))))
      ;; Render lines
      (with-gl-program
       'lines
@@ -164,5 +165,6 @@
          program-id
          (lambda ()
            ;; (compose polyline.render node-element render-element-node)
-           (render-layer.sublayer-for-each (lambda (e) (-> e render-element-node node-element polyline.render))
-                                           (sublayer-first (render-layer-polylines-sublayer layer))))))))))
+           (let [(polyline-render (polyline.render program-id))]
+             (render-layer.sublayer-for-each (lambda (e) (-> e render-element-node node-element polyline-render))
+                                             (sublayer-first (render-layer-polylines-sublayer layer)))))))))))

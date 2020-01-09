@@ -21,11 +21,12 @@
    color-a-set!
    uuid-v4
    (rename get-test-data core-graph:get-test-data)
+   time-now
    )
 
   (begin
     (include "color.scm")
     (include "layer.scm")
     (include "graph.scm")
-    (include "uuid.scm")
+    (include "utils.scm")
     (include "style.scm")))

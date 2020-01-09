@@ -7,7 +7,7 @@
 ;;! Create a shader
 ;; .parameter Type of shader
 ;; .parameter Shader string
-(define (gl-create-shader shader-type shader-code)
+(define (gl-create-shader shader-type name shader-code)
   (let ((shader-id (glCreateShader shader-type))
         (shader-status* (alloc-GLint* 1)))
     (glShaderSource shader-id 1 (list shader-code) #f)
@@ -19,7 +19,7 @@
           (let* ((info-log-length (*->GLint info-log-length*))
                  (info-log* (alloc-GLchar* info-log-length)))
             (glGetShaderInfoLog shader-id info-log-length #f info-log*)
-            (error-log (string-append "GL Shading Language compilation -- " (*->string info-log*))))))
+            (error-log (string-append "GL Shading Language compilation in " name ": " (*->string info-log*))))))
     shader-id))
 
 ;;! Link a list of shaders
@@ -54,14 +54,14 @@
 
 (define (programs:init)
   ;; Lines program
-  (let ((vertex-shader (gl-create-shader GL_VERTEX_SHADER (load-text-file "render/shaders/lines.vert")))
-        (fragment-shader (gl-create-shader GL_FRAGMENT_SHADER (load-text-file "render/shaders/lines.frag"))))
+  (let ((vertex-shader (gl-create-shader GL_VERTEX_SHADER "lines.vert" (load-text-file "assets/shaders/lines.vert")))
+        (fragment-shader (gl-create-shader GL_FRAGMENT_SHADER "lines.frag" (load-text-file "assets/shaders/lines.frag"))))
     (table-set! *programs* 'lines
                 (gl-create-program (list vertex-shader fragment-shader)
                                    identity)))
   ;; Texture 2d program
-  (let ((vertex-shader (gl-create-shader GL_VERTEX_SHADER (load-text-file "render/shaders/tex2d.vert")))
-        (fragment-shader (gl-create-shader GL_FRAGMENT_SHADER (load-text-file "render/shaders/tex2d.frag"))))
+  (let ((vertex-shader (gl-create-shader GL_VERTEX_SHADER "tex2d.vert" (load-text-file "assets/shaders/tex2d.vert")))
+        (fragment-shader (gl-create-shader GL_FRAGMENT_SHADER "tex2d.frag" (load-text-file "assets/shaders/tex2d.frag"))))
     (table-set! *programs* 'texture-2d
                 (gl-create-program (list vertex-shader fragment-shader)
                                    (lambda (program-id)

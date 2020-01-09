@@ -57,8 +57,8 @@
     (let ((texture-id (*->GLuint texture-id*)))
       (glBindTexture GL_TEXTURE_2D texture-id)
       ;; FILTER: Necessary for NPOT textures in GLES2
-      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
       ;; WRAP: Necessary for NPOT textures in GLES2
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
@@ -66,7 +66,9 @@
       (check-gl-error
        (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
                      texture-width texture-height
-                     0 GL_BGRA_EXT GL_UNSIGNED_BYTE
+                     ;; For GLES2 it seems that we need to use GL_RGBA
+                     ;;0 GL_BGRA_EXT GL_UNSIGNED_BYTE
+                     0 GL_RGBA GL_UNSIGNED_BYTE
                      (SDL_Surface-pixels texture-surf*)))
       ;; Unbind and free the surface
       (glBindTexture GL_TEXTURE_2D 0)

@@ -1,3 +1,5 @@
+#version 100
+
 attribute vec4 position;
 uniform mat4 perspectiveMatrix;
 

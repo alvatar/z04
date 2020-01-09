@@ -4,3 +4,4 @@ gambit.h
 *.js
 *.wasm
 *.bc
+*.data

@@ -1,3 +1,5 @@
+#version 100
+
 attribute vec2 position;
 attribute vec2 texCoord;
 uniform mat4 perspectiveMatrix;

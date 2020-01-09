@@ -176,7 +176,7 @@ for lib in $STD_LIBS; do
     SCHEME_BC_FILES="${SCHEME_BC_FILES} $STD_OUTDIR/$MODULE.bc"
 done
 
-gsc -:search=./,search=.. -c -o out/std.c -module-ref std ../std/std.scm
+gsc -:search=./,search=.. -c -o out/std.c -module-ref std ../std.scm
 emcc -I$WORKDIR -c out/std.c $C_FLAGS -o out/std.bc
 SCHEME_C_FILES="${SCHEME_C_FILES} out/std.c"
 SCHEME_BC_FILES="${SCHEME_BC_FILES} out/std.bc"
@@ -211,7 +211,7 @@ for lib in $SCHEME_LIBS; do
     SCHEME_C_FILES="${SCHEME_C_FILES} $TARGET_FILE.c"
     SCHEME_BC_FILES="${SCHEME_BC_FILES} $TARGET_FILE.bc"
     cd $SOURCE_DIR
-    gsc -c -module-ref $(dirname ${lib}) $FILE
+    gsc -c -module-ref $(dirname ${lib}) -e '(define-cond-expand-feature emscripten)' $FILE
     mkdir -p $LIBS_OUTDIR/$LOCAL_DIR
     cp ${FILE//.sld}.c $LIBS_OUTDIR/$LOCAL_DIR
     emcc $EMCC_LIB_FLAGS -I$WORKDIR -c $TARGET_FILE.c $C_FLAGS -o $TARGET_FILE.bc
@@ -238,14 +238,15 @@ for lib in $SCHEME_PROJ_LIBS; do
     mkdir -p $PROJ_OUTDIR/$LOCAL_DIR
     #gsc -:search=./,search=.. -c -o $TARGET_FILE.c -e '(import _define-library/debug)' $lib > $TARGET_FILE.expansion.scm
     #gsc -:search=./,search=.. -c -o $TARGET_FILE.c -expansion $lib > $TARGET_FILE.expansion.scm
-    gsc -:search=./,search=.. -c -o $TARGET_FILE.c $lib
+    gsc -:search=./,search=.. -c -o $TARGET_FILE.c -e '(define-cond-expand-feature emscripten)' $lib
     emcc -I$WORKDIR -c $TARGET_FILE.c $C_FLAGS -o $TARGET_FILE.bc
     cd $WORKDIR
 done
 
 echo "Compiling Scheme main..."
+EXPANSION="" #-expansion
 cd $SCHEME_PROJ_DIR
-gsc -:search=./,search=.. -c -o $PROJ_OUTDIR/main.c -expansion main.scm > main.scm.expansion.
+gsc -:search=./,search=.. -c -o $PROJ_OUTDIR/main.c $EXPANSION -e '(define-cond-expand-feature emscripten)' main.scm
 cd $WORKDIR
 emcc -I$WORKDIR -c -o $PROJ_OUTDIR/main.bc $PROJ_OUTDIR/main.c
 
@@ -254,17 +255,13 @@ emcc -I$WORKDIR -c -o $PROJ_OUTDIR/main.bc $PROJ_OUTDIR/main.c
 # Final compilation
 #########################################################
 
-#echo $SCHEME_C_FILES
-#echo $SCHEME_BC_FILES
-
 echo "Compiling link file..."
 gsc -warnings -link -o $OUTDIR/app_.c -nopreload $SCHEME_C_FILES $PROJ_OUTDIR/main.c
 emcc -I$WORKDIR $OUTDIR/app_.c -c -o $OUTDIR/app_.bc
 
-#echo $SCHEME_BC_FILES
-
 echo "Linking..."
 emcc $EMCC_LIB_FLAGS -s WASM=1 \
+     --preload-file assets \
      $OUTDIR/libgambit.bc \
      $SCHEME_BC_FILES \
      $PROJ_OUTDIR/main.bc \

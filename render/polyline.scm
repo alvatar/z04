@@ -26,14 +26,15 @@
 
 (define (polyline.refresh-vbo! pl)
   (when (polyline-dirty? pl)
-    (let [(vertices (make-f32vector (* (polyline-num-points pl) 2)))
-          (n 0)]
+    (let* [(num-points (polyline-num-points pl))
+           (vertices (make-f32vector (* num-points 2)))
+           (n 0)]
       (for-each (lambda (p)
                   (f32vector-set! vertices n (exact->inexact (vector2-x p)))
                   (f32vector-set! vertices (fx+ n 1) (exact->inexact (vector2-y p)))
                   (set! n (fx+ n 2)))
                 (polyline-points pl))
-      (vertex-object.update! (polyline-vbo pl) vertices) ; vbo
+      (vertex-object.update! (polyline-vbo pl) vertices num-points) ; vbo
       (polyline-dirty?-set! pl #f))))
 
 (define (with-polyline-render-state program-id f)
@@ -41,12 +42,12 @@
    (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE *gl-perspective-matrix*))
   (f))
 
-(define (polyline.render pl)
-  (vertex-object.render
-   (polyline-vbo pl)
-   GL_LINE_STRIP
-   (lambda ()
-     ;; (glGetAttribLocation program-id "position")
-     (let ((pos 0))
-       (glEnableVertexAttribArray pos)
-       (glVertexAttribPointer pos 2 GL_FLOAT GL_FALSE 0 #f)))))
+(define (polyline.render program-id)
+  (lambda (pl)
+    (vertex-object.render
+     (polyline-vbo pl)
+     GL_LINE_STRIP
+     (lambda ()
+       (let [(pos (glGetAttribLocation program-id "position"))]
+         (glEnableVertexAttribArray pos)
+         (glVertexAttribPointer pos 2 GL_FLOAT GL_FALSE 0 #f))))))

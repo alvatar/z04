@@ -78,7 +78,8 @@
                                    (vector2+ (box2d-top-left box2d)
                                              ;; TODO: Multiplied by 0.5 for HDPI. Revisit.
                                              (vector2*scalar (make-vector2 w h)
-                                                             0.5)))))
+                                                             0.5)))
+                                  6))
         (text-dirty?-set! text #f)
         text)))
   text)
@@ -103,15 +104,15 @@
                qx2 qy2 1.0 1.0)))
 
 (define (with-text-render-state/aux program-id f0 matrix)
-  (glEnable GL_TEXTURE_2D)
-  (glEnable GL_BLEND)
-  (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
+  ;;(glEnable GL_TEXTURE_2D)
+  (check-gl-error (glEnable GL_BLEND))
+  (check-gl-error (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA))
   (check-gl-error
    (glUniform1i (glGetUniformLocation program-id "colorTexture") 0))
   (check-gl-error
    (glUniformMatrix4fv (glGetUniformLocation program-id "perspectiveMatrix") 1 GL_FALSE matrix))
   (f0)
-  (glDisable GL_TEXTURE_2D)
+  ;;(glDisable GL_TEXTURE_2D)
   (glDisable GL_BLEND))
 
 (define (with-text-render-state program-id f0)
@@ -121,18 +122,24 @@
   (with-text-render-state/aux program-id f0 *gl-base-matrix*))
 
 ;;! Text render must be run within a with-text-* function
-(define (text.render text)
-  (-> text
-      text-vertex-object
-      (vertex-object.render
-       GL_TRIANGLES
-       (lambda ()
-         ;; (glGetAttribLocation program-id "position")
-         ;; attribute vec2 position = 0
-         ;; attribute vec2 texCoord = 1
-         (glEnableVertexAttribArray 0)
-         (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
-         (glEnableVertexAttribArray 1)
-         (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
-         (glActiveTexture GL_TEXTURE0)
-         (glBindTexture GL_TEXTURE_2D (text-texture text))))))
+(define (text.render program-id)
+  (let [(loc-position (glGetAttribLocation program-id "position"))
+        (loc-texcoord (glGetAttribLocation program-id "texCoord"))]
+    (lambda (text)
+      (-> text
+          text-vertex-object
+          (vertex-object.render
+           GL_TRIANGLES
+           (lambda ()
+             ;; (glGetAttribLocation program-id "position")
+             ;; attribute vec2 position = 0
+             ;; attribute vec2 texCoord = 1
+             (glEnableVertexAttribArray loc-position)
+             (glVertexAttribPointer loc-position 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+             (glEnableVertexAttribArray loc-texcoord)
+             (glVertexAttribPointer loc-texcoord 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
+             (glActiveTexture GL_TEXTURE0)
+             (glBindTexture GL_TEXTURE_2D (text-texture text)))
+           (lambda ()
+             (glDisableVertexAttribArray loc-position)
+             (glDisableVertexAttribArray loc-texcoord)))))))

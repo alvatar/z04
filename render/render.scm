@@ -42,9 +42,9 @@
   (perspective-matrix-update!))
 
 (define (renderer:init width height)
-  (glEnable GL_MULTISAMPLE_EXT)
-  (glDepthFunc GL_NEVER)
-  (glDisable GL_DEPTH_TEST)
+  ;; (check-gl-error (glEnable GL_MULTISAMPLE_EXT))
+  (check-gl-error (glDepthFunc GL_NEVER))
+  (check-gl-error (glDisable GL_DEPTH_TEST))
   (renderer:update-view! width height)
   (fonts:init)
   (programs:init))
@@ -69,34 +69,31 @@
   (values *render-tree* *render-layers*))
 
 (define (renderer:render)
-  (let ((time-init (current-time)))
+  (let ((time-init (time-now)))
     (glClearColor 0.0 0.0 0.0 1.0)
     (glClear GL_COLOR_BUFFER_BIT)
 
     (render-layers.render *render-layers*)
 
     ;; Render debug texts
-
-    ;; (with-gl-program
-    ;;  'texture-2d
-    ;;  (lambda (program-id)
-    ;;    (with-text-overlay-render-state
-    ;;     program-id
-    ;;     (lambda () (for-each text.render
-    ;;                     (list (make-text (format "FPS: ~a" (/ 1 (- (time->seconds (current-time)) (time->seconds time-init))))
-    ;;                                      (make-box2d (make-vector2 10.0 (- *screen-height* 55.0)) (make-vector2 100.0 100.0))
-    ;;                                      '("assailand" 25)
-    ;;                                      (make-color 255 255 255 255))
-    ;;                           (make-text (format "Scale factor: ~a" *scaling-factor*)
-    ;;                                      (make-box2d (make-vector2 10.0 (- *screen-height* 40.0)) (make-vector2 100.0 100.0))
-    ;;                                      '("assailand" 25)
-    ;;                                      (make-color 255 255 255 255))
-    ;;                           (make-text (format "Translation factor: [~a, ~a]" (vector2-x *translation-vector2*) (vector2-y *translation-vector2*))
-    ;;                                      (make-box2d (make-vector2 10.0 (- *screen-height* 25.0)) (make-vector2 100.0 100.0))
-    ;;                                      '("assailand" 25)
-    ;;                                      (make-color 255 255 255 255))))))))
-
-    ))
+    (with-gl-program
+     'texture-2d
+     (lambda (program-id)
+       (with-text-overlay-render-state
+        program-id
+        (lambda () (for-each (text.render program-id)
+                        (list (make-text (format "FPS: ~a" (/ 1000 (- time-init (time-now))))
+                                         (make-box2d (make-vector2 10.0 (- *screen-height* 55.0)) (make-vector2 100.0 100.0))
+                                         '("assailand" 25)
+                                         (make-color 255 255 255 255))
+                              (make-text (format "Scale factor: ~a" *scaling-factor*)
+                                         (make-box2d (make-vector2 10.0 (- *screen-height* 40.0)) (make-vector2 100.0 100.0))
+                                         '("assailand" 25)
+                                         (make-color 255 255 255 255))
+                              (make-text (format "Translation factor: [~a, ~a]" (vector2-x *translation-vector2*) (vector2-y *translation-vector2*))
+                                         (make-box2d (make-vector2 10.0 (- *screen-height* 25.0)) (make-vector2 100.0 100.0))
+                                         '("assailand" 25)
+                                         (make-color 255 255 255 255))))))))))
 
 ;;
 ;; Utils

@@ -1,3 +1,7 @@
 *o1
 *@gambit*
 .emacs*
+libEGL.dylib
+libEGL.dylib.TOC
+libGLESv2.dylib
+libGLESv2.dylib.TOC

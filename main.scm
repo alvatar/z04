@@ -2,103 +2,105 @@
 
 (import (base)
         (base functional)
+        (gles2)
         (sdl2)
         (ffi-utils))
 
 (import (core)
         (render))
 
-(define (main)
-  (when (< (SDL_Init SDL_INIT_VIDEO) 0) (error (string-append "Error initializing SDL " (SDL_GetError))))
+(define main-loop
+  (let ((event* (alloc-SDL_Event))
+        (mouse-down #f)
+        (key-down #f))
+    (lambda (loop exit)
+      (when (= 1 (SDL_PollEvent event*))
+        (cond ((= (SDL_Event-type event*) SDL_QUIT)
+               (exit))
+              ((= (SDL_Event-type event*) SDL_KEYDOWN)
+               (let [(key-event* (*->void* event*))]
+                 (when (zero? (SDL_KeyboardEvent-repeat key-event*))
+                   (let [(key (-> key-event* SDL_KeyboardEvent-keysym SDL_Keysym-sym))]
+                     (cond ((= key SDLK_SPACE)
+                            (set! key-down 'space)))))))
+              ((= (SDL_Event-type event*) SDL_KEYUP)
+               (set! key-down #f))
+              ((= (SDL_Event-type event*) SDL_MOUSEBUTTONDOWN)
+               (set! mouse-down #t))
+              ((= (SDL_Event-type event*) SDL_MOUSEBUTTONUP)
+               (set! mouse-down #f))
+              ((= (SDL_Event-type event*) SDL_MOUSEMOTION)
+               (when mouse-down
+                 (let [(mouse-event* (*->void* event*))]
+                   (renderer:translate-view! (SDL_MouseMotionEvent-xrel mouse-event*)
+                                             (SDL_MouseMotionEvent-yrel mouse-event*)))))
+              ((= (SDL_Event-type event*) SDL_MOUSEWHEEL)
+               (renderer:scale-view! (SDL_MouseWheelEvent-y (*->void* event*)))))
+        (renderer:render)
+        (SDL_GL_SwapWindow (get-window)))
+      (loop))))
 
-  (println "SDL Initializing...")
-  (SDL_GL_SetAttribute SDL_GL_MULTISAMPLEBUFFERS 1)
-  (SDL_GL_SetAttribute SDL_GL_MULTISAMPLESAMPLES 16)
-  (SDL_GL_SetAttribute SDL_GL_ALPHA_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_RED_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
-  (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-  ;;(SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
-  (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
-  (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
-  (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)
-  (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-  ;;(SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 24)
+(define (alt-loop loop)
+  (glClearColor (random-real) (random-real) 0.0 1.0)
+  (glClear GL_COLOR_BUFFER_BIT)
+  (SDL_GL_SwapWindow (get-window))
+  (loop))
 
-  (let* ((mode* (alloc-SDL_DisplayMode))
-         (_ (SDL_GetDesktopDisplayMode 0 mode*))
-         (window-width (SDL_DisplayMode-w mode*))
-         (window-height (- (SDL_DisplayMode-h mode*) 50))
-         (window (SDL_CreateWindow "Ultra Awesome CAD"
-                                   SDL_WINDOWPOS_UNDEFINED
-                                   SDL_WINDOWPOS_UNDEFINED
-                                   window-width
-                                   window-height
-                                   SDL_WINDOW_SHOWN)))
-    (unless window (SDL_LogCritical (string-append "Error creating window: " (SDL_GetError))))
-    (let ((glc (SDL_GL_CreateContext window)))
-      (SDL_GL_SetSwapInterval 0)
-      (SDL_CreateRenderer window -1 (bitwise-ior SDL_RENDERER_ACCELERATED SDL_RENDERER_TARGETTEXTURE))
+(cond-expand
+ (gles2
+  (define (main)
+    (gl-init)
+    (renderer:init (get-window-width) (get-window-height))
+    ;;--------
+    ;; TODO: load based on definitions form the scene graph
+    (render-fonts:install "assailand" 14 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
+    (render-fonts:install "assailand" 25 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
+    (render-fonts:install "assailand" 34 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
+    (receive (render-tree render-layers)
+        (renderer:load-scene! (core-graph:get-test-data))
+      ;; (pp (vector-length (node-element render-tree)))
+      (println "Scene loaded")
+      ;;(pp render-tree)
+      ;; (let [(group (scene-tree.find-child (lambda (n) (eq? (node-type n) group:)) render-tree))]
+      ;;   ;;(pp group)
+      ;;   (println "***********************************")
+      ;;   ;; (pp (scene-tree.add-node render-tree (make-node "my-node" text: #f group 0)))
+      ;;   (scene-tree.remove-node! group)
+      ;;   (pp render-tree))
+      )
+    ;;--------
 
-      (renderer:init window-width window-height)
+    ;; (SDL_SetRelativeMouseMode SDL_TRUE)
+    (let/cc exit (let loop () (main-loop loop exit)))
 
-      ;;--------
-      ;; TODO: load based on definitions form the scene graph
-      ;; (render-fonts:install "assailand" 14 "fonts/assailand/hinted-Assailand-Medium.ttf")
-      ;; (render-fonts:install "assailand" 25 "fonts/assailand/hinted-Assailand-Medium.ttf")
-      ;; (render-fonts:install "assailand" 34 "fonts/assailand/hinted-Assailand-Medium.ttf")
-      (receive (render-tree render-layers)
-          (renderer:load-scene! (core-graph:get-test-data))
-        ;; (pp (vector-length (node-element render-tree)))
-        (let [(group (scene-tree.find-child (lambda (n) (eq? (node-type n) group:)) render-tree))]
-          ;;(pp group)
-          (println "***********************************")
-          ;; (pp (scene-tree.add-node render-tree (make-node "my-node" text: #f group 0)))
-          (scene-tree.remove-node! group)
-          (pp render-tree)
-          ))
-      ;;--------
+    (renderer:shutdown)
 
-      (SDL_SetRelativeMouseMode SDL_TRUE)
-      (let/cc exit
-              (let ((event* (alloc-SDL_Event))
-                    (mouse-down #f)
-                    (key-down #f))
-                (let loop ()
-                  (if (= 1 (SDL_WaitEvent event*))
-                      (cond ((= (SDL_Event-type event*) SDL_QUIT)
-                             (exit))
-                            ((= (SDL_Event-type event*) SDL_KEYDOWN)
-                             (let [(key-event* (*->void* event*))]
-                               (when (zero? (SDL_KeyboardEvent-repeat key-event*))
-                                 (let [(key (-> key-event* SDL_KeyboardEvent-keysym SDL_Keysym-sym))]
-                                   (cond ((= key SDLK_SPACE)
-                                          (set! key-down 'space)))))))
-                            ((= (SDL_Event-type event*) SDL_KEYUP)
-                             (set! key-down #f))
-                            ((= (SDL_Event-type event*) SDL_MOUSEBUTTONDOWN)
-                             (set! mouse-down #t))
-                            ((= (SDL_Event-type event*) SDL_MOUSEBUTTONUP)
-                             (set! mouse-down #f))
-                            ((= (SDL_Event-type event*) SDL_MOUSEMOTION)
-                             (when mouse-down
-                               (let [(mouse-event* (*->void* event*))]
-                                 (renderer:translate-view! (SDL_MouseMotionEvent-xrel mouse-event*)
-                                                           (SDL_MouseMotionEvent-yrel mouse-event*)))))
-                            ((= (SDL_Event-type event*) SDL_MOUSEWHEEL)
-                             (renderer:scale-view! (SDL_MouseWheelEvent-y (*->void* event*))))))
-                  (renderer:render)
-                  (SDL_GL_SwapWindow window)
-                  (loop))))
+    (SDL_GL_DeleteContext (get-sdl-glcontext))
+    (SDL_DestroyWindow (get-window))
+    (SDL_Quit)
+    (println "Exiting...")))
 
-      (renderer:shutdown)
+ (emscripten
+  (include "init.scm")
+  (c-define (c-main-loop args) ((pointer void)) void "c_main_loop" "static"
+            (let/cc exit (main-loop exit exit)))
+  (define (main)
+    (gl-init)
+    (renderer:init (get-window-width) (get-window-height))
+    (render-fonts:install "assailand" 14 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
+    (render-fonts:install "assailand" 25 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
+    (render-fonts:install "assailand" 34 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
+    (receive (render-tree render-layers)
+        (renderer:load-scene! (core-graph:get-test-data))
+      (println "Scene loaded."))
 
-      (SDL_DestroyWindow window)
-      (SDL_Quit)
-      (println "Exiting..."))
-    ))
+    (emscripten_set_main_loop_arg c-main-loop #f -1 1)
+
+    (renderer:shutdown)
+
+    (SDL_GL_DeleteContext (get-sdl-glcontext))
+    (SDL_DestroyWindow (get-window))
+    (SDL_Quit)
+    (println "Exiting..."))))
 
 (main)
-
-
