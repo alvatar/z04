@@ -8,4 +8,4 @@ clean:
 
 clean-libgambit:
 	@echo "Cleaning Gambit WASM library..."
-	@rm -f out/mlibgambit.bc
+	@rm -f out/libgambit.bc

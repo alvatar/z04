@@ -11,16 +11,3 @@
                         ((eq? c #\y) (y-replace))
                         (else c)))
   (string-map map-proc uuid-v4-pattern))
-
-(cond-expand
- (gles2
-  (define (time-now) (* 1000 (time->seconds (current-time)))))
- (emscripten
-  (c-declare
-#<<c-declare-end
-#include "emscripten.h"
-c-declare-end
-)
-  (define time-now (c-lambda () double "emscripten_get_now"))))
-
-

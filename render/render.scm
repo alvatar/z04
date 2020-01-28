@@ -69,11 +69,12 @@
   (values *render-tree* *render-layers*))
 
 (define (renderer:render)
-  (let ((time-init (time-now)))
+  (let ((time-init (time->seconds (current-time))))
     (glClearColor 0.0 0.0 0.0 1.0)
     (glClear GL_COLOR_BUFFER_BIT)
 
     (render-layers.render *render-layers*)
+    ;; (println "TIME native: " time-init (time->seconds (current-time)))
 
     ;; Render debug texts
     (with-gl-program
@@ -82,7 +83,7 @@
        (with-text-overlay-render-state
         program-id
         (lambda () (for-each (text.render program-id)
-                        (list (make-text (format "FPS: ~a" (/ 1000 (- time-init (time-now))))
+                        (list (make-text (format "FPS: ~a" (- time-init (time->seconds (current-time))))
                                          (make-box2d (make-vector2 10.0 (- *screen-height* 55.0)) (make-vector2 100.0 100.0))
                                          '("assailand" 25)
                                          (make-color 255 255 255 255))

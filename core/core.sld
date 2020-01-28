@@ -21,7 +21,6 @@
    color-a-set!
    uuid-v4
    (rename get-test-data core-graph:get-test-data)
-   time-now
    )
 
   (begin
