@@ -163,14 +163,10 @@ compile_std_libs() {
         mkdir -p $STD_OUTDIR/$MODULE
         gsc -:search=./,search=.. -c -o $STD_OUTDIR/$MODULE.c -module-ref $MODULE $GAMBIT_LIB_DIR/$lib.sld
         emcc -I$WORKDIR -c $STD_OUTDIR/$MODULE.c $C_FLAGS -o $STD_OUTDIR/$MODULE.bc
-        #SCHEME_C_FILES="${SCHEME_C_FILES} $STD_OUTDIR/$MODULE.c"
-        #SCHEME_BC_FILES="${SCHEME_BC_FILES} $STD_OUTDIR/$MODULE.bc"
     done
 
     gsc -:search=./,search=.. -c -o out/std.c -module-ref std ../std.scm
     emcc -I$WORKDIR -c out/std.c $C_FLAGS -o out/std.bc
-    #SCHEME_C_FILES="${SCHEME_C_FILES} out/std.c"
-    #SCHEME_BC_FILES="${SCHEME_BC_FILES} out/std.bc"
 }
 
 #########################################################
@@ -209,8 +205,6 @@ compile_scheme_libs() {
         FILE=`basename $SCHEME_LIBS_DIR/$lib`
         LOCAL_DIR=`dirname $lib`
         TARGET_FILE=$(sed -E 's/(.sld|.scm)//g' <<< $LIBS_OUTDIR/$LOCAL_DIR/$FILE)
-        #SCHEME_C_FILES="${SCHEME_C_FILES} $TARGET_FILE.c"
-        #SCHEME_BC_FILES="${SCHEME_BC_FILES} $TARGET_FILE.bc"
         cd $SOURCE_DIR
         gsc -c -module-ref $(dirname ${lib}) -e '(define-cond-expand-feature emscripten)' $FILE
         mkdir -p $LIBS_OUTDIR/$LOCAL_DIR
@@ -241,8 +235,6 @@ compile_project() {
         echo "Compiling Scheme project file" $lib "..."
         LOCAL_DIR=`dirname $lib`
         TARGET_FILE=$(sed -E 's/(.sld|.scm)//g' <<< $PROJ_OUTDIR/$lib)
-        #SCHEME_C_FILES="${SCHEME_C_FILES} $TARGET_FILE.c"
-        #SCHEME_BC_FILES="${SCHEME_BC_FILES} $TARGET_FILE.bc"
         cd $SCHEME_PROJ_DIR
         mkdir -p $PROJ_OUTDIR/$LOCAL_DIR
         #gsc -:search=./,search=.. -c -o $TARGET_FILE.c -e '(import _define-library/debug)' $lib > $TARGET_FILE.expansion.scm

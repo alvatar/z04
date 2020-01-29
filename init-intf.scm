@@ -33,17 +33,29 @@ c-declare-end
 (define gui-shutdown
  (c-lambda () void "nk_sdl_shutdown"))
 
-(define gui-get-context
- (c-lambda () nk_context* "___return(_nk_ctx);"))
+;; (define gui-get-context
+;;  (c-lambda () nk_context* "___return(_nk_ctx);"))
 
-(define gui-input-begin
-  (c-lambda (nk_context*) void "nk_input_begin"))
+;; (define gui-input-begin
+;;   (c-lambda (nk_context*) void "nk_input_begin"))
 
-(define gui-input-end
- (c-lambda (nk_context*) void "nk_input_end"))
+;; (define gui-input-end
+;;  (c-lambda (nk_context*) void "nk_input_end"))
 
-(define gui-sdl-handle-event
-  (c-lambda (SDL_Event*) int "nk_sdl_handle_event"))
+;; (define gui-sdl-handle-event
+;;   (c-lambda (SDL_Event*) int "nk_sdl_handle_event"))
 
-(define gui-shutdown
- (c-lambda () void "nk_sdl_shutdown"))
+(c-define-type app_event (struct "app_event_t"))
+(c-define-type app_event* (pointer app_event))
+
+(define process-app-events
+  (c-lambda () void "process_app_events"))
+
+(define get-next-app-event
+  (c-lambda () app_event* "get_next_app_event"))
+
+(define app-event-type
+  (c-lambda (app_event*) int "___return(___arg1->type);"))
+
+(define app-event-data
+  (c-lambda (app_event*) char-string "___return(___arg1->data);"))

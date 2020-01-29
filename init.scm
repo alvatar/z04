@@ -23,11 +23,13 @@
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
 
-struct nk_context *_nk_ctx;
-
 #define EVENT_BUFFER_SIZE 10
 
-typedef union app_event_t {
+#define ACTION_START_POLYLINE 100
+
+struct nk_context *_nk_ctx;
+
+typedef struct app_event_t {
     int type;
     char *data;
 } app_event;
@@ -36,7 +38,7 @@ app_event event_list[EVENT_BUFFER_SIZE] = {};
 int num_events = 0;
 int current_event = 0;
 
-bool push_event(app_event e) {
+bool push_app_event(app_event e) {
     if (num_events >= EVENT_BUFFER_SIZE) {
         return false;
     }
@@ -45,28 +47,30 @@ bool push_event(app_event e) {
     return true;
 }
 
-void clear_events() {
-    for (int i=0; i<EVENT_BUFFER_SIZE; i++) {
-        app_event *e = &event_list[i];
-        e->type = 0;
-        if (e->data != NULL) {
-            free(e->data);
-            e->data = NULL;
-        }
-    }
+void clear_app_events() {
+    /* for (int i=0; i<num_events; i++) { */
+    /*     app_event *e = &event_list[i]; */
+    /*     if (e->data != NULL) { */
+    /*         free(e->data); */
+    /*         e->data = NULL; */
+    /*     } */
+    /* } */
+    num_events = 0;
     current_event = 0;
 }
 
-app_event* get_next_event() {
-    app_event *e;
+app_event* get_next_app_event() {
+    //printf("Current %d, num_events: %d\n", current_event, num_events);
+        
+    app_event *e = NULL;
     if (current_event < num_events) {
         e = &event_list[current_event];
         current_event++;
     }
-    return NULL;
+    return e;
 }
 
-void process_events() {
+void process_app_events() {
     SDL_Event evt;
     nk_input_begin(_nk_ctx);
     while (SDL_PollEvent(&evt)) {
@@ -155,52 +159,58 @@ struct nk_context* gui_init(SDL_Window *win) {
 void gui_render() {
 struct nk_context *ctx = _nk_ctx;
 
-  if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
-        NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
-        NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+clear_app_events();
+
+if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
+             NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+             NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+{
+    nk_menubar_begin(ctx);
+    nk_layout_row_begin(ctx, NK_STATIC, 25, 2);
+    nk_layout_row_push(ctx, 45);
+    if (nk_menu_begin_label(ctx, "FILE", NK_TEXT_LEFT, nk_vec2(120, 200)))
     {
-      nk_menubar_begin(ctx);
-      nk_layout_row_begin(ctx, NK_STATIC, 25, 2);
-      nk_layout_row_push(ctx, 45);
-      if (nk_menu_begin_label(ctx, "FILE", NK_TEXT_LEFT, nk_vec2(120, 200)))
-        {
-          nk_layout_row_dynamic(ctx, 30, 1);
-          nk_menu_item_label(ctx, "OPEN", NK_TEXT_LEFT);
-          nk_menu_item_label(ctx, "CLOSE", NK_TEXT_LEFT);
-          nk_menu_end(ctx);
-        }
-      nk_layout_row_push(ctx, 45);
-      if (nk_menu_begin_label(ctx, "EDIT", NK_TEXT_LEFT, nk_vec2(120, 200)))
-        {
-          nk_layout_row_dynamic(ctx, 30, 1);
-          nk_menu_item_label(ctx, "COPY", NK_TEXT_LEFT);
-          nk_menu_item_label(ctx, "CUT", NK_TEXT_LEFT);
-          nk_menu_item_label(ctx, "PASTE", NK_TEXT_LEFT);
-          nk_menu_end(ctx);
-        }
-      nk_layout_row_end(ctx);
-      nk_menubar_end(ctx);
-
-      enum {EASY, HARD};
-      static int op = EASY;
-      static int property = 20;
-      nk_layout_row_static(ctx, 30, 80, 1);
-      if (nk_button_label(ctx, "button"))
-          fprintf(stdout, "button pressed\n");
-      nk_layout_row_dynamic(ctx, 30, 2);
-      if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-      if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-      nk_layout_row_dynamic(ctx, 25, 1);
-      nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_menu_item_label(ctx, "OPEN", NK_TEXT_LEFT);
+        nk_menu_item_label(ctx, "CLOSE", NK_TEXT_LEFT);
+        nk_menu_end(ctx);
     }
-    nk_end(ctx);
+    nk_layout_row_push(ctx, 45);
+    if (nk_menu_begin_label(ctx, "EDIT", NK_TEXT_LEFT, nk_vec2(120, 200)))
+    {
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_menu_item_label(ctx, "COPY", NK_TEXT_LEFT);
+        nk_menu_item_label(ctx, "CUT", NK_TEXT_LEFT);
+        nk_menu_item_label(ctx, "PASTE", NK_TEXT_LEFT);
+        nk_menu_end(ctx);
+    }
+    nk_layout_row_end(ctx);
+    nk_menubar_end(ctx);
 
-    /* IMPORTANT: `nk_sdl_render` modifies some global OpenGL state
-     * with blending, scissor, face culling, depth test and viewport and
-     * defaults everything back into a default state.
-     * Make sure to either a.) save and restore or b.) reset your own state after
-     * rendering the UI. */
-    nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+    enum {EASY, HARD};
+    static int op = EASY;
+    static int property = 20;
+    nk_layout_row_static(ctx, 30, 80, 1);
+    if (nk_button_label(ctx, "button")) {
+        fprintf(stdout, "button pressed\n");
+        app_event ev = {.type = ACTION_START_POLYLINE, .data = "{style: \"default\"}"};
+        push_app_event(ev);
+    }
+      
+    nk_layout_row_dynamic(ctx, 30, 2);
+    if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
+    if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
+    nk_layout_row_dynamic(ctx, 25, 1);
+    nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+}
+nk_end(ctx);
+
+/* IMPORTANT: `nk_sdl_render` modifies some global OpenGL state
+ * with blending, scissor, face culling, depth test and viewport and
+ * defaults everything back into a default state.
+ * Make sure to either a.) save and restore or b.) reset your own state after
+ * rendering the UI. */
+nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 }
 
 c-declare-end
