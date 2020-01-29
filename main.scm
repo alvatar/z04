@@ -3,7 +3,6 @@
 (import (base)
         (base functional)
         (gles2)
-        (sdl2)
         (ffi-utils))
 
 (import (core)
@@ -28,15 +27,14 @@
          )
 
   (renderer:render)
-  (gui-render)
-
-  (SDL_GL_SwapWindow (get-window))
+  (gui:render)
   (loop))
 
 (define (main)
-  (gl-init)
-  (gui-init (get-window))
+  (app:init)
+  (gui:init)
   (renderer:init (get-window-width) (get-window-height))
+
   ;;--------
   ;; TODO: load based on definitions form the scene graph
   (render-fonts:install "assailand" 14 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
@@ -56,8 +54,6 @@
     )
   ;;--------
 
-  ;; (SDL_SetRelativeMouseMode SDL_TRUE)
-
   (cond-expand
    (gles2
     (let/cc exit (let loop () (main-loop loop exit))))
@@ -65,11 +61,8 @@
     (emscripten_set_main_loop_arg c-main-loop #f -1 1)))
 
   (renderer:shutdown)
-  (gui-shutdown)
-
-  (SDL_GL_DeleteContext (get-sdl-glcontext))
-  (SDL_DestroyWindow (get-window))
-  (SDL_Quit)
+  (gui:shutdown)
+  (app:shutdown)
   (println "Exiting..."))
 
 (main)

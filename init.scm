@@ -83,12 +83,12 @@ void process_app_events() {
 }
 
 
-int window_width;
-int window_height;
-SDL_Window* window;
-SDL_GLContext sdl_glctx;
+int _window_width;
+int _window_height;
+SDL_Window* _window;
+SDL_GLContext _sdl_glctx;
 
-void gl_init()
+void app_init()
 {
    SDL_Assert(SDL_Init(SDL_INIT_VIDEO) == 0);
 
@@ -109,14 +109,14 @@ void gl_init()
                                     //SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI);
 
    SDL_Assert(w);
-   window = w;
-   window_width = d_mode.w;
-   window_height = d_mode.h;
+   _window = w;
+   _window_width = d_mode.w;
+   _window_height = d_mode.h;
 
-   sdl_glctx = SDL_GL_CreateContext(w);
-   SDL_Assert(sdl_glctx);
+   _sdl_glctx = SDL_GL_CreateContext(w);
+   SDL_Assert(_sdl_glctx);
 
-   SDL_Assert(SDL_GL_MakeCurrent(w, sdl_glctx) == 0);
+   SDL_Assert(SDL_GL_MakeCurrent(w, _sdl_glctx) == 0);
    SDL_GL_SetSwapInterval(0);
 
    /* PFNGLGETSTRINGPROC glGetString = SDL_GL_GetProcAddress("glGetString"); */
@@ -126,11 +126,17 @@ void gl_init()
    printf("GL_VERSION = %s\n", glGetString(GL_VERSION));
    printf("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
    printf("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
-   printf("Window size [w: %d, h:%d]\n", window_width, window_height);
+   printf("Window size [w: %d, h:%d]\n", _window_width, _window_height);
 }
 
-struct nk_context* gui_init(SDL_Window *win) {
-    _nk_ctx = nk_sdl_init(win);
+void app_shutdown() {
+    SDL_GL_DeleteContext(_sdl_glctx);
+    SDL_DestroyWindow(_window);
+    SDL_Quit();
+}
+
+struct nk_context* gui_init() {
+    _nk_ctx = nk_sdl_init(_window);
 
     /* Load Fonts: if none of these are loaded a default font will be used  */
     /* Load Cursor: if you uncomment cursor loading please hide the cursor */
@@ -211,6 +217,8 @@ nk_end(ctx);
  * Make sure to either a.) save and restore or b.) reset your own state after
  * rendering the UI. */
 nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+
+SDL_GL_SwapWindow(_window);
 }
 
 c-declare-end

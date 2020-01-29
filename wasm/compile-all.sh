@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 #########################################################
 # General config
 #########################################################
@@ -12,17 +11,11 @@ fi
 
 WORKDIR=`pwd`
 OUTDIR="out"
-
 SCHEME_PROJ_DIR=".."
 PROJ_OUTDIR=$WORKDIR/$OUTDIR/scheme
-mkdir -p $PROJ_OUTDIR
-
 SCHEME_LIBS_DIR="../.."
 LIBS_OUTDIR=$WORKDIR/$OUTDIR/scheme-libs
-mkdir -p $LIBS_OUTDIR
-
 STD_OUTDIR=$WORKDIR/$OUTDIR/scheme-stdlibs
-mkdir -p $STD_OUTDIR
 
 C_FLAGS="-Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-pointer-types"
 
@@ -262,18 +255,18 @@ if [ ! -f $OUTDIR/libgambit.bc ]; then
     compile_gambit_runtime
 fi
 
-if [ ! -d $STD_OUTDIR ]; then
-    mkdir -p $GAMBIT_OUTDIR
+if [ ! -d "$STD_OUTDIR" ]; then
+    mkdir -p $STD_OUTDIR
     compile_std_libs
 fi
 
-if [ ! -d $SCHEME_LIBS_DIR_OUTDIR ]; then
-    mkdir -p $GAMBIT_OUTDIR
+if [ ! -d "$LIBS_OUTDIR" ]; then
+    mkdir -p $LIBS_OUTDIR
     compile_scheme_libs
 fi
 
-if [ ! -d $PROJ_OUTDIR ]; then
-    mkdir -p $GAMBIT_OUTDIR
+if [ ! -d "$PROJ_OUTDIR" ]; then
+    mkdir -p $PROJ_OUTDIR
     compile_project
 fi
 
