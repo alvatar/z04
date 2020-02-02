@@ -2,10 +2,10 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <SDL2/SDL.h>
-#include <GLES2/gl2.h> // https://www.khronos.org/registry/OpenGL/api/GLES2/gl2.h
 
-#define SDL_Assert(x) do {if (!(x)) printf("Error: %s\n", SDL_GetError()); } while (0)
+#include <SDL2/SDL.h>
+
+#include <GLES2/gl2.h> // https://www.khronos.org/registry/OpenGL/api/GLES2/gl2.h
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -20,68 +20,114 @@
 #include "gui/nuklear.h"
 #include "gui/nuklear_sdl_gles2.h"
 
+struct nk_context *_nk_ctx;
+
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
 
+//
+// App Events
+//
+
 #define EVENT_BUFFER_SIZE 10
+#define EVENT_DATA_BUFFER_SIZE 256
 
-#define ACTION_START_POLYLINE 100
-
-struct nk_context *_nk_ctx;
+#define ACTION_QUIT 1
+#define ACTION_TEST 2
+#define ACTION_TRANSLATE_SPACE 100
+#define ACTION_SCALE_SPACE 101
+#define ACTION_START_POLYLINE 1000
 
 typedef struct app_event_t {
     int type;
     char *data;
 } app_event;
 
-app_event event_list[EVENT_BUFFER_SIZE] = {};
-int num_events = 0;
-int current_event = 0;
-
-bool push_app_event(app_event e) {
-    if (num_events >= EVENT_BUFFER_SIZE) {
-        return false;
-    }
-    event_list[num_events] = e;
-    num_events++;
-    return true;
-}
+static app_event event_list[EVENT_BUFFER_SIZE] = {};
+int i_read_event = 0;
+int i_write_event = 0;
 
 void clear_app_events() {
-    /* for (int i=0; i<num_events; i++) { */
-    /*     app_event *e = &event_list[i]; */
-    /*     if (e->data != NULL) { */
-    /*         free(e->data); */
-    /*         e->data = NULL; */
-    /*     } */
-    /* } */
-    num_events = 0;
-    current_event = 0;
+    for (int i=0; i<i_write_event; i++) {
+        char *buf = event_list[i].data;
+        if (buf != NULL) {
+            free(buf);
+        }
+    }
+    i_read_event = 0;
+    i_write_event = 0;
 }
 
-app_event* get_next_app_event() {
-    //printf("Current %d, num_events: %d\n", current_event, num_events);
-        
+app_event* next_write_event() {
     app_event *e = NULL;
-    if (current_event < num_events) {
-        e = &event_list[current_event];
-        current_event++;
+    if (i_write_event < EVENT_BUFFER_SIZE) {
+        e = &event_list[i_write_event++];
+        e->data = NULL;
+    }
+    return e;
+}
+
+app_event* next_read_event() {
+    app_event *e = NULL;
+    if (i_read_event < i_write_event) {
+        e = &event_list[i_read_event++];
     }
     return e;
 }
 
 void process_app_events() {
     SDL_Event evt;
+    app_event *aev;
     nk_input_begin(_nk_ctx);
     while (SDL_PollEvent(&evt)) {
-        if (evt.type == SDL_KEYDOWN) {
-            SDL_Log("User just pressed down a key!");
+        // Ignore SDL event if we don't have room for more
+        switch (evt.type) {
+        case SDL_QUIT:
+            aev = next_write_event(); if (aev == NULL) continue;
+            aev->type = ACTION_QUIT;
+            break;
+        case SDL_MOUSEMOTION:
+        {
+            const Uint8 *key_state = SDL_GetKeyboardState(NULL);
+            if (key_state[SDL_SCANCODE_SPACE]) {
+                aev = next_write_event(); if (aev == NULL) continue;
+                aev->type = ACTION_TRANSLATE_SPACE;
+                aev->data = malloc(EVENT_DATA_BUFFER_SIZE);
+                snprintf(aev->data, EVENT_DATA_BUFFER_SIZE, "{\"x\": %d, \"y\": %d}", evt.motion.xrel, evt.motion.yrel);
+            }
+            break;
+        }
+        case SDL_MOUSEWHEEL:
+        {
+            const Uint8 *key_state = SDL_GetKeyboardState(NULL);
+            if (key_state[SDL_SCANCODE_SPACE]) {
+                aev = next_write_event(); if (aev == NULL) continue;
+                aev->type = ACTION_SCALE_SPACE;
+                aev->data = malloc(EVENT_DATA_BUFFER_SIZE);
+                snprintf(aev->data, EVENT_DATA_BUFFER_SIZE, "{\"increment\": %d}", evt.wheel.y);
+            }
+            break;
+        }
         }
         nk_sdl_handle_event(&evt);
     }
     nk_input_end(_nk_ctx);
 }
 
+bool js_push_event(int type, char *data) {
+    printf("PUSHED EVENT %d %s\n", type, data);
+    app_event *e = next_write_event();
+    if (e == NULL) return false;
+    e->type = type;
+    e->data = data;
+    return true;
+}
+
+//
+// SDL App
+//
+
+#define SDL_Assert(x) do {if (!(x)) printf("Error: %s\n", SDL_GetError()); } while (0)
 
 int _window_width;
 int _window_height;
@@ -107,7 +153,6 @@ void app_init()
                                     d_mode.w, d_mode.h,
                                     SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE);
                                     //SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI);
-
    SDL_Assert(w);
    _window = w;
    _window_width = d_mode.w;
@@ -122,7 +167,6 @@ void app_init()
    /* PFNGLGETSTRINGPROC glGetString = SDL_GL_GetProcAddress("glGetString"); */
    /* PFNGLCLEARCOLORPROC glClearColor = SDL_GL_GetProcAddress("glClearColor"); */
    /* PFNGLCLEARPROC glClear = SDL_GL_GetProcAddress("glClear"); */
-
    printf("GL_VERSION = %s\n", glGetString(GL_VERSION));
    printf("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
    printf("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
@@ -134,6 +178,10 @@ void app_shutdown() {
     SDL_DestroyWindow(_window);
     SDL_Quit();
 }
+
+//
+// GUI
+//
 
 struct nk_context* gui_init() {
     _nk_ctx = nk_sdl_init(_window);
@@ -158,18 +206,16 @@ struct nk_context* gui_init() {
     /*set_style(ctx, THEME_WHITE);*/
     /*set_style(ctx, THEME_RED);*/
     /*set_style(ctx, THEME_BLUE);*/
-    /*set_style(ctx, THEME_DARK);*/    
+    /*set_style(ctx, THEME_DARK);*/
     return _nk_ctx;
 }
 
 void gui_render() {
 struct nk_context *ctx = _nk_ctx;
 
-clear_app_events();
-
 if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
-             NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
-             NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+             NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
+             NK_WINDOW_CLOSABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
 {
     nk_menubar_begin(ctx);
     nk_layout_row_begin(ctx, NK_STATIC, 25, 2);
@@ -198,11 +244,10 @@ if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
     static int property = 20;
     nk_layout_row_static(ctx, 30, 80, 1);
     if (nk_button_label(ctx, "button")) {
-        fprintf(stdout, "button pressed\n");
-        app_event ev = {.type = ACTION_START_POLYLINE, .data = "{style: \"default\"}"};
-        push_app_event(ev);
+        app_event * aev = next_write_event();
+        if (aev != NULL) aev->type = ACTION_START_POLYLINE;
     }
-      
+
     nk_layout_row_dynamic(ctx, 30, 2);
     if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
     if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
@@ -217,8 +262,6 @@ nk_end(ctx);
  * Make sure to either a.) save and restore or b.) reset your own state after
  * rendering the UI. */
 nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
-
-SDL_GL_SwapWindow(_window);
 }
 
 c-declare-end

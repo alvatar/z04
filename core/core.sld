@@ -3,8 +3,11 @@
   (import (gambit)
           ;;(_match)
           ;;(srfi 28)
-          ;;(srfi 69)
-          )
+          (srfi 69))
+
+  (import (base)
+          (base alist)
+          (json))
 
   (import (base memoization))
 
@@ -21,9 +24,18 @@
    color-a-set!
    uuid-v4
    (rename get-test-data core-graph:get-test-data)
+
+   action:quit
+   action:test
+   action:translate-space
+   action:scale-space
+   action:start-polyline
+   add-action-listener
+   get-action-listeners
    )
 
   (begin
+    (include "actions.scm")
     (include "color.scm")
     (include "layer.scm")
     (include "graph.scm")

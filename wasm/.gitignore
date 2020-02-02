@@ -1,7 +1,8 @@
 out/
+include/
 gambit.h
-*.html
-*.js
+app.html
+app.js
 *.wasm
 *.bc
 *.data

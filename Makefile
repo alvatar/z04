@@ -4,7 +4,7 @@ all clean: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-init.o1: init.scm gui/nuklear.scm
+init.o1: init.scm init-intf.scm gui/nuklear.scm
 	@echo "Compiling init module..."
 	@rm -f init.o1
 	@gsc -cc-options "-I../../external/angle/include" -ld-options "`pkg-config --libs sdl2` -L. -lGLESv2 -lEGL" init.scm && install_name_tool -change @rpath/libEGL.dylib @loader_path/libEGL.dylib init.o1 && install_name_tool -change @rpath/libGLESv2.dylib @loader_path/libGLESv2.dylib init.o1

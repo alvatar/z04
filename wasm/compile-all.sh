@@ -214,6 +214,7 @@ compile_scheme_libs() {
 SCHEME_PROJ_LIBS="
 core/core.sld
 render/render.sld
+json/json.sld
 "
 
 for lib in $SCHEME_PROJ_LIBS; do
@@ -243,7 +244,7 @@ compile_main() {
     cd $SCHEME_PROJ_DIR
     gsc -:search=./,search=.. -c -o $PROJ_OUTDIR/main.c -e '(define-cond-expand-feature emscripten)' main.scm
     cd $WORKDIR
-    emcc -I$SCHEME_PROJ_DIR -I$WORKDIR -c -o $PROJ_OUTDIR/main.bc $PROJ_OUTDIR/main.c
+    emcc $EMCC_LIB_FLAGS -I$SCHEME_PROJ_DIR -I$WORKDIR -c -o $PROJ_OUTDIR/main.bc $PROJ_OUTDIR/main.c
 }
 
 #########################################################
@@ -277,7 +278,10 @@ gsc -warnings -link -o $OUTDIR/app_.c -nopreload $SCHEME_C_FILES $PROJ_OUTDIR/ma
 emcc -I$WORKDIR $OUTDIR/app_.c -c -o $OUTDIR/app_.bc
 
 echo "Linking..."
-emcc $EMCC_LIB_FLAGS -s WASM=1 \
+emcc $EMCC_LIB_FLAGS \
+     -s WASM=1 \
+     -s EXPORTED_FUNCTIONS="['_main', '_js_push_event']" \
+     -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
      --preload-file assets \
      $OUTDIR/libgambit.bc \
      $SCHEME_BC_FILES \
