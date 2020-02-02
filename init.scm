@@ -129,8 +129,8 @@ bool js_push_event(int type, char *data) {
 
 #define SDL_Assert(x) do {if (!(x)) printf("Error: %s\n", SDL_GetError()); } while (0)
 
-int _window_width;
-int _window_height;
+int _window_width, _window_height;
+int _window_resolution_x, _window_resolution_y;
 SDL_Window* _window;
 SDL_GLContext _sdl_glctx;
 
@@ -148,15 +148,21 @@ void app_init()
 
    SDL_DisplayMode d_mode;
    SDL_GetDesktopDisplayMode(0, &d_mode);
+#ifdef __EMSCRIPTEN__
+   int window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+#else
+   int window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+#endif
    SDL_Window* w = SDL_CreateWindow("Ultra Awesome CAD",
                                     SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                     d_mode.w, d_mode.h,
-                                    SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE);
-                                    //SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI);
+                                    window_flags);
+
    SDL_Assert(w);
    _window = w;
    _window_width = d_mode.w;
    _window_height = d_mode.h;
+   SDL_GL_GetDrawableSize(w, &_window_resolution_x, &_window_resolution_y);
 
    _sdl_glctx = SDL_GL_CreateContext(w);
    SDL_Assert(_sdl_glctx);
@@ -170,7 +176,7 @@ void app_init()
    printf("GL_VERSION = %s\n", glGetString(GL_VERSION));
    printf("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
    printf("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
-   printf("Window size [w: %d, h:%d]\n", _window_width, _window_height);
+   printf("Window size [w: %d, h:%d] resolution [w: %d, h: %d]\n", _window_width, _window_height, _window_resolution_x, _window_resolution_y);
 }
 
 void app_shutdown() {

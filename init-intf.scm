@@ -10,6 +10,11 @@
 (define get-window-width (c-lambda () int "___return(_window_width);"))
 (define get-window-height (c-lambda () int "___return(_window_height);"))
 
+(define get-window-width (c-lambda () int "___return(_window_width);"))
+(define get-window-height (c-lambda () int "___return(_window_height);"))
+(define get-window-resolution-x (c-lambda () int "___return(_window_resolution_x);"))
+(define get-window-resolution-y (c-lambda () int "___return(_window_resolution_y);"))
+
 (define swap-window
   (c-lambda () void "SDL_GL_SwapWindow(_window);"))
 

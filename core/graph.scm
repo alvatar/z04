@@ -7,11 +7,11 @@
 ;;
 
 ;; Get fake graph for testing
-(define (get-test-data)
+(define (get-test-data width height)
   (let [(obj-uuid (uuid-v4))]
     `(root:
       (objects:
-       ((id: ,obj-uuid) (polyline: (points: (100.0 50.0) (500.0 400.0) (200.0 20.0) (33.0 100.0))))
+       ((id: ,obj-uuid) (polyline: (points: (0.0 0.0) (,width ,height))))
        ((id: ,(uuid-v4)) (polyline: (points: (9 1) (0 0) (2 2) (3 3)))))
       (group:
        (id: ,(uuid-v4))
@@ -19,11 +19,11 @@
               (tags: "main"))
        (elements:
         (polyline: (id: ,(uuid-v4)) (prop: (tags: "helpers"))
-                   (points: (1 400) (0 0) (20 200) (300 800)))
-        (polyline: (id: ,(uuid-v4))
-                   (points: (3 200) (100 400) (500 20) (20 3000)))
-        (polyline: (id: ,(uuid-v4))
-                   (points: (-200 100) (400 400) (20 400) (0 30)))
+                   (points: (0.0 0.0) (,width ,height)))
+        ;; (polyline: (id: ,(uuid-v4))
+        ;;            (points: (3 200) (100 400) (500 20) (20 3000)))
+        ;; (polyline: (id: ,(uuid-v4))
+        ;;            (points: (-200 100) (400 400) (20 400) (0 30)))
         ;; (ref: (id: ,(uuid-v4)) (object: ,obj-uuid))
         ))
       (text:

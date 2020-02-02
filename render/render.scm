@@ -32,7 +32,7 @@
 ;; Render
 ;;
 
-(define (renderer:update-view! screen-width screen-height)
+(define (renderer:update-view! screen-width screen-height resolution-x resolution-y)
   (set! *screen-width* screen-width)
   (set! *screen-height* screen-height)
   (set! *base-matrix*
@@ -41,11 +41,11 @@
   (set! *gl-base-matrix* (matrix->GLfloat* (matrix.map exact->inexact *base-matrix*)))
   (perspective-matrix-update!))
 
-(define (renderer:init width height)
+(define (renderer:init screen-width screen-height resolution-x resolution-y)
   ;; (check-gl-error (glEnable GL_MULTISAMPLE_EXT))
   (check-gl-error (glDepthFunc GL_NEVER))
   (check-gl-error (glDisable GL_DEPTH_TEST))
-  (renderer:update-view! width height)
+  (renderer:update-view! screen-width screen-height resolution-x resolution-y)
   (fonts:init)
   (programs:init))
 

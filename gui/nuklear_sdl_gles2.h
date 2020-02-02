@@ -103,7 +103,7 @@ nk_sdl_device_create(void)
         "}\n";
 
     struct nk_sdl_device *dev = &sdl.ogl;
-    
+
     nk_buffer_init_default(&dev->cmds);
     dev->prog = glCreateProgram();
     dev->vert_shdr = glCreateShader(GL_VERTEX_SHADER);
@@ -133,7 +133,7 @@ nk_sdl_device_create(void)
         dev->vp = offsetof(struct nk_sdl_vertex, position);
         dev->vt = offsetof(struct nk_sdl_vertex, uv);
         dev->vc = offsetof(struct nk_sdl_vertex, col);
-        
+
         /* Allocate buffers */
         glGenBuffers(1, &dev->vbo);
         glGenBuffers(1, &dev->ebo);
@@ -214,7 +214,7 @@ nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_b
         /* Bind buffers */
         glBindBuffer(GL_ARRAY_BUFFER, dev->vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dev->ebo);
-        
+
         {
             /* buffer setup */
             glEnableVertexAttribArray((GLuint)dev->attrib_pos);

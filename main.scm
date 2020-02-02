@@ -40,7 +40,7 @@
 (define (main)
   (app:init)
   (gui:init)
-  (renderer:init (get-window-width) (get-window-height))
+  (renderer:init (get-window-width) (get-window-height) (get-window-resolution-x) (get-window-resolution-y))
 
   (add-action-listener action:translate-space
                        (lambda (data) (renderer:translate-view! (get+ data "x") (get+ data "y"))))
@@ -55,7 +55,7 @@
   (render-fonts:install "assailand" 25 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
   (render-fonts:install "assailand" 34 "assets/fonts/assailand/hinted-Assailand-Medium.ttf")
   (receive (render-tree render-layers)
-      (renderer:load-scene! (core-graph:get-test-data))
+      (renderer:load-scene! (core-graph:get-test-data (get-window-width) (get-window-height)))
     ;; (pp (vector-length (node-element render-tree)))
     (println "Scene loaded.")
     ;;(pp render-tree)
