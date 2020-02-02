@@ -40,7 +40,8 @@
                        (lambda (data) (renderer:translate-view! (get+ data "x") (get+ data "y"))))
   (add-action-listener action:scale-space
                        (lambda (data) (renderer:scale-view! (get+ data "increment"))))
-  (add-action-listener action:start-polyline (lambda (_) (println "POLYLINE BEGIN!")))
+  (add-action-listener action:start-polyline
+                       (lambda (_) (println "POLYLINE BEGIN!")))
 
   ;;--------
   ;; TODO: load based on definitions form the scene graph

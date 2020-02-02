@@ -15,120 +15,120 @@ end-of-c-declare
 )
 
 
-;; (##c-declare #<<end-of-c-declare
+(##c-declare #<<end-of-c-declare
 
-;; #include <stdio.h>
-;; #include "emscripten.h"
+#include <stdio.h>
+#include "emscripten.h"
 
-;; #define SCHEME_LIBRARY_LINKER ___LNK___app__
+#define SCHEME_LIBRARY_LINKER ___LNK___app__
 
-;; ___BEGIN_C_LINKAGE
-;; extern ___mod_or_lnk SCHEME_LIBRARY_LINKER (___global_state_struct*);
-;; ___END_C_LINKAGE
+___BEGIN_C_LINKAGE
+extern ___mod_or_lnk SCHEME_LIBRARY_LINKER (___global_state_struct*);
+___END_C_LINKAGE
 
-;; extern void setup() {
+extern void setup() {
 
-;;   /*
-;;    * Setup the Scheme library by calling "___setup" with appropriate
-;;    * parameters.  The call to "___setup_params_reset" sets all parameters
-;;    * to their default setting.
-;;    */
+  /*
+   * Setup the Scheme library by calling "___setup" with appropriate
+   * parameters.  The call to "___setup_params_reset" sets all parameters
+   * to their default setting.
+   */
 
-;;   ___setup_params_struct setup_params;
+  ___setup_params_struct setup_params;
 
-;;   ___setup_params_reset(&setup_params);
+  ___setup_params_reset(&setup_params);
 
-;;   setup_params.version = ___VERSION;
-;;   setup_params.linker  = SCHEME_LIBRARY_LINKER;
+  setup_params.version = ___VERSION;
+  setup_params.linker  = SCHEME_LIBRARY_LINKER;
 
-;;   ___ON_THROW(___setup(&setup_params);,);
-;; }
+  ___ON_THROW(___setup(&setup_params);,);
+}
 
-;; extern void cleanup() {
+extern void cleanup() {
 
-;;   /* Cleanup the Scheme library */
+  /* Cleanup the Scheme library */
 
-;;   ___cleanup();
-;; }
+  ___cleanup();
+}
 
-;; extern void user_interrupt() {
-;;   ___raise_interrupt(___INTR_USER);
-;; }
+extern void user_interrupt() {
+  ___raise_interrupt(___INTR_USER);
+}
 
-;; extern void heartbeat_interrupt() {
-;;   ___raise_interrupt(___INTR_HEARTBEAT);
-;; }
+extern void heartbeat_interrupt() {
+  ___raise_interrupt(___INTR_HEARTBEAT);
+}
 
-;; extern ___SCMOBJ scheme_idle() {
-;; #define ___NARGS 0
-;;   ___BEGIN_SFUN_SCMOBJ(___GLO__23__23_idle)
-;;   ___BEGIN_SFUN_BODY
-;;   ___SFUN_CALL_SCMOBJ
-;;   ___SFUN_SET_RESULT_SCMOBJ
-;;   ___END_SFUN_BODY
-;;   ___SFUN_ERROR_SCMOBJ
-;;   ___SFUN_SET_RESULT_SCMOBJ
-;;   ___END_SFUN_SCMOBJ
-;;   return ___result;
-;; #undef ___NARGS
-;; }
+extern ___SCMOBJ scheme_idle() {
+#define ___NARGS 0
+  ___BEGIN_SFUN_SCMOBJ(___GLO__23__23_idle)
+  ___BEGIN_SFUN_BODY
+  ___SFUN_CALL_SCMOBJ
+  ___SFUN_SET_RESULT_SCMOBJ
+  ___END_SFUN_BODY
+  ___SFUN_ERROR_SCMOBJ
+  ___SFUN_SET_RESULT_SCMOBJ
+  ___END_SFUN_SCMOBJ
+  return ___result;
+#undef ___NARGS
+}
 
-;; extern double idle() {
+extern double idle() {
 
-;;   ___processor_state ___ps = ___PSTATE;
-;;   ___SCMOBJ result = ___FIX(0);
+  ___processor_state ___ps = ___PSTATE;
+  ___SCMOBJ result = ___FIX(0);
 
-;;   ___ON_THROW(result = scheme_idle();,);
+  ___ON_THROW(result = scheme_idle();,);
 
-;;   if (___FIXNUMP(result))
-;;     return -1.0; /* signal program termination */
-;;   else
-;;     return ___FLONUM_VAL(result);
-;; }
+  if (___FIXNUMP(result))
+    return -1.0; /* signal program termination */
+  else
+    return ___FLONUM_VAL(result);
+}
 
-;; end-of-c-declare
-;; )
+end-of-c-declare
+)
 
-;; (define (##idle)
+(define (##idle)
 
-;;   (##declare (not interrupts-enabled))
+  (##declare (not interrupts-enabled))
 
-;;   (##thread-heartbeat!)
+  (##thread-heartbeat!)
 
-;;   (let ((current-processor
-;;          (macro-current-processor)))
+  (let ((current-processor
+         (macro-current-processor)))
 
-;;     ;; check if there are runnable threads
+    ;; check if there are runnable threads
 
-;;     (if (##not (##eq? (macro-btq-singleton? current-processor)
-;;                       (macro-current-thread)))
+    (if (##not (##eq? (macro-btq-singleton? current-processor)
+                      (macro-current-thread)))
 
-;;         ;; there are runnable threads
+        ;; there are runnable threads
 
-;;         interval-runnable
+        interval-runnable
 
-;;         ;; there are no runnable threads, so check if there are threads
-;;         ;; waiting for a timeout or for a device to become ready
+        ;; there are no runnable threads, so check if there are threads
+        ;; waiting for a timeout or for a device to become ready
 
-;;         (let* ((next-sleeper
-;;                 (macro-toq-leftmost current-processor))
-;;                (interval-sleep
-;;                 (if (##eq? next-sleeper current-processor)
-;;                     +inf.0
-;;                     (begin
-;;                       ;; There is a sleeping thread, so figure out in
-;;                       ;; how much time it needs to wake up.
-;;                       (##flmax
-;;                        (##fl- (macro-thread-timeout next-sleeper)
-;;                               (##current-time-point))
-;;                        interval-min-wait))))
-;;                (next-condvar
-;;                 (macro-btq-deq-next current-processor))
-;;                (interval-io
-;;                 (if (##eq? next-condvar current-processor)
-;;                     interval-no-io-pending ;; I/O is not pending, just relax
-;;                     interval-io-pending))) ;; I/O is pending, so come back soon
-;;           (##flmin interval-sleep interval-io)))))
+        (let* ((next-sleeper
+                (macro-toq-leftmost current-processor))
+               (interval-sleep
+                (if (##eq? next-sleeper current-processor)
+                    +inf.0
+                    (begin
+                      ;; There is a sleeping thread, so figure out in
+                      ;; how much time it needs to wake up.
+                      (##flmax
+                       (##fl- (macro-thread-timeout next-sleeper)
+                              (##current-time-point))
+                       interval-min-wait))))
+               (next-condvar
+                (macro-btq-deq-next current-processor))
+               (interval-io
+                (if (##eq? next-condvar current-processor)
+                    interval-no-io-pending ;; I/O is not pending, just relax
+                    interval-io-pending))) ;; I/O is pending, so come back soon
+          (##flmin interval-sleep interval-io)))))
 
 (define interval-runnable 0.0)
 (set! interval-runnable 0.0)
@@ -146,26 +146,26 @@ end-of-c-declare
 
 ;; Remember REPL history from one run of Gambit to the next.
 
-;; (define (##load-repl-history tty)
-;;   (##tty-history-set! tty (##local-storage-get "gambit-repl-history")))
+(define (##load-repl-history tty)
+  (##tty-history-set! tty (##local-storage-get "gambit-repl-history")))
 
-;; (define (##save-repl-history tty)
-;;   (##local-storage-set "gambit-repl-history" (##tty-history tty)))
+(define (##save-repl-history tty)
+  (##local-storage-set "gambit-repl-history" (##tty-history tty)))
 
-;; (define (##setup-repl-history)
-;;   (let* ((ct (macro-current-thread))
-;;          (channel (##thread-repl-channel-get! ct))
-;;          (tty (macro-repl-channel-input-port channel)))
-;;     (if (##tty? tty)
-;;         (let ((orig-read-expr
-;;                (macro-repl-channel-ports-read-expr channel)))
-;;           (##load-repl-history tty)
-;;           (macro-repl-channel-ports-read-expr-set!
-;;            channel
-;;            (lambda (channel)
-;;              (let ((result (orig-read-expr channel)))
-;;                (##save-repl-history tty)
-;;                result)))))))
+(define (##setup-repl-history)
+  (let* ((ct (macro-current-thread))
+         (channel (##thread-repl-channel-get! ct))
+         (tty (macro-repl-channel-input-port channel)))
+    (if (##tty? tty)
+        (let ((orig-read-expr
+               (macro-repl-channel-ports-read-expr channel)))
+          (##load-repl-history tty)
+          (macro-repl-channel-ports-read-expr-set!
+           channel
+           (lambda (channel)
+             (let ((result (orig-read-expr channel)))
+               (##save-repl-history tty)
+               result)))))))
 
 ;;;----------------------------------------------------------------------------
 
@@ -179,40 +179,40 @@ end-of-c-declare
 ;; thread which executes the rest of the program (returning back from
 ;; the C call to ___setup).
 
-;; (define (##main-program-set! thunk)
-;;   (##main-set!
-;;    (lambda ()
-;;      (##continuation-capture
-;;       (lambda (cont)
+(define (##main-program-set! thunk)
+  (##main-set!
+   (lambda ()
+     (##continuation-capture
+      (lambda (cont)
 
-;;         (##setup-repl-history)
+        (##setup-repl-history)
 
-;;         (##thread-start!
-;;          (make-root-thread
-;;           (lambda ()
-;;             (let ((orig-denv (macro-thread-denv thread)))
-;;               (macro-denv-interrupt-mask-set! orig-denv 8) ;; (expt 2 ___INTR_USER)
-;;               ;; Need to take a copy of the dynamic environment because
-;;               ;; ##continuation-return-no-winding will change the
-;;               ;; thread's dynamic environment
-;;               (##continuation-return-no-winding
-;;                cont
-;;                (lambda (orig-denv)
-;;                  ;; Must disable user interrupts in service thread so
-;;                  ;; that the idle function won't start a REPL of its own
-;;                  ;; on a ctrl-c.  The new interrupt mask will take
-;;                  ;; effect at the thread-restore!  operation.
-;;                  (macro-thread-save!
-;;                   (lambda (thread orig-denv)
-;;                     (macro-thread-denv-set! thread orig-denv)
-;;                     (macro-thread-restore!
-;;                      thread
-;;                      (lambda ()
-;;                        #f)))
-;;                   orig-denv)))))))
+        (##thread-start!
+         (make-root-thread
+          (lambda ()
+            (let ((orig-denv (macro-thread-denv (macro-current-thread))))
+              (macro-denv-interrupt-mask-set! orig-denv 8) ;; (expt 2 ___INTR_USER)
+              ;; Need to take a copy of the dynamic environment because
+              ;; ##continuation-return-no-winding will change the
+              ;; thread's dynamic environment
+              (##continuation-return-no-winding
+               cont
+               (lambda (orig-denv)
+                 ;; Must disable user interrupts in service thread so
+                 ;; that the idle function won't start a REPL of its own
+                 ;; on a ctrl-c.  The new interrupt mask will take
+                 ;; effect at the thread-restore!  operation.
+                 (macro-thread-save!
+                  (lambda (thread orig-denv)
+                    (macro-thread-denv-set! thread orig-denv)
+                    (macro-thread-restore!
+                     thread
+                     (lambda ()
+                       #f)))
+                  orig-denv)))))))
 
-;;         (##thread-yield!)
+        (##thread-yield!)
 
-;;         (##continuation-graft cont thunk))))))
+        (##continuation-graft cont thunk))))))
 
 ;;;============================================================================
