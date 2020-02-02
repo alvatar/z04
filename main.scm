@@ -10,11 +10,6 @@
 (import (core)
         (render))
 
-(cond-expand
- (emscripten (include "init.scm")
-             (c-define (c-main-loop args) ((pointer void)) void "c_main_loop" "static"
-                       (let/cc exit (main-loop exit exit))))
- (else #!void))
 
 (define (main-loop loop exit)
   (renderer:render)
@@ -30,6 +25,17 @@
                (for-each (lambda (f) (f data)) (get-action-listeners action)))))
   (clear-app-events)
   (loop))
+
+(cond-expand
+ (emscripten
+  (include "init.scm")
+  (c-define (c-main-loop args) ((pointer void)) void "c_main_loop" "static"
+            (let/cc exit (main-loop exit exit)))
+  (define (run-main-loop)
+    (emscripten_set_main_loop_arg c-main-loop #f -1 1)))
+ (else
+  (define (run-main-loop)
+    (let/cc exit (let loop () (main-loop loop exit))))))
 
 (define (main)
   (app:init)
@@ -62,11 +68,7 @@
     )
   ;;--------
 
-  (cond-expand
-   (gles2
-    (let/cc exit (let loop () (main-loop loop exit))))
-   (emscripten
-    (emscripten_set_main_loop_arg c-main-loop #f -1 1)))
+  (run-main-loop)
 
   (renderer:shutdown)
   (gui:shutdown)
